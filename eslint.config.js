@@ -20,6 +20,7 @@ export default [
         window: 'readonly',
         document: 'readonly',
         HTMLElement: 'readonly',
+        HTMLButtonElement: 'readonly',
         customElements: 'readonly',
         jest: 'readonly',
         describe: 'readonly',

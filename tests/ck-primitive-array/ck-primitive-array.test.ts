@@ -113,4 +113,44 @@ describe('CkPrimitiveArray Component', () => {
     // Cleanup
     document.body.removeChild(jsElement);
   });
+
+  test('shadow root is created when element is connected', () => {
+    const el = document.createElement('ck-primitive-array') as CkPrimitiveArray;
+    document.body.appendChild(el);
+    // connectedCallback is called on append; verify shadowRoot exists
+    expect(el.shadowRoot).toBeTruthy();
+    document.body.removeChild(el);
+  });
+
+  test('list container with role="list" exists in shadow DOM', () => {
+    const el = new CkPrimitiveArray();
+    document.body.appendChild(el);
+    el.connectedCallback();
+    const list = el.shadowRoot?.querySelector('[role="list"]');
+    expect(list).toBeTruthy();
+    document.body.removeChild(el);
+  });
+
+  test('add button is visible and enabled when there are no items', () => {
+    const el = new CkPrimitiveArray();
+    document.body.appendChild(el);
+    el.connectedCallback();
+    const btn = el.shadowRoot?.querySelector(
+      'button.add-item'
+    ) as HTMLButtonElement | null;
+    expect(btn).toBeTruthy();
+    expect(btn?.disabled).toBeFalsy();
+    document.body.removeChild(el);
+  });
+
+  test('placeholder text is shown when list has no items', () => {
+    const el = new CkPrimitiveArray();
+    document.body.appendChild(el);
+    el.connectedCallback();
+    const placeholder =
+      el.shadowRoot?.querySelector('.ck-primitive-array__placeholder')
+        ?.textContent || '';
+    expect(placeholder).toContain('No items');
+    document.body.removeChild(el);
+  });
 });
