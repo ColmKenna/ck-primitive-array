@@ -153,4 +153,145 @@ describe('CkPrimitiveArray Component', () => {
     expect(placeholder).toContain('No items');
     document.body.removeChild(el);
   });
+
+  describe('Items Attribute Parsing', () => {
+    test('Valid JSON array of strings renders items', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b","c"]');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(3);
+      expect(items?.[0]?.textContent).toBe('a');
+      expect(items?.[1]?.textContent).toBe('b');
+      expect(items?.[2]?.textContent).toBe('c');
+
+      document.body.removeChild(el);
+    });
+
+    test('Numbers are coerced to strings', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '[1, 2, 3]');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(3);
+      expect(items?.[0]?.textContent).toBe('1');
+      expect(items?.[1]?.textContent).toBe('2');
+      expect(items?.[2]?.textContent).toBe('3');
+
+      document.body.removeChild(el);
+    });
+
+    test('Booleans are coerced to strings', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '[true, false]');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(2);
+      expect(items?.[0]?.textContent).toBe('true');
+      expect(items?.[1]?.textContent).toBe('false');
+
+      document.body.removeChild(el);
+    });
+
+    test('Non-primitive objects are ignored', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", {"x":1}, "b"]');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(2);
+      expect(items?.[0]?.textContent).toBe('a');
+      expect(items?.[1]?.textContent).toBe('b');
+
+      document.body.removeChild(el);
+    });
+
+    test('Arrays are ignored', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", [1,2], "b"]');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(2);
+      expect(items?.[0]?.textContent).toBe('a');
+      expect(items?.[1]?.textContent).toBe('b');
+
+      document.body.removeChild(el);
+    });
+
+    test('Null values are ignored', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", null, "b"]');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(2);
+      expect(items?.[0]?.textContent).toBe('a');
+      expect(items?.[1]?.textContent).toBe('b');
+
+      document.body.removeChild(el);
+    });
+
+    test('Invalid JSON logs error and renders no items', () => {
+      const consoleSpy = jest
+        .spyOn(globalThis.console, 'error')
+        .mockImplementation();
+
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', 'not json');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(0);
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('Invalid JSON preserves previous state', () => {
+      const consoleSpy = jest
+        .spyOn(globalThis.console, 'error')
+        .mockImplementation();
+
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b", "c"]');
+      document.body.appendChild(el);
+
+      // Verify initial state
+      let items = el.shadowRoot?.querySelectorAll('.ck-primitive-array__item');
+      expect(items?.length).toBe(3);
+
+      // Set invalid JSON
+      el.setAttribute('items', 'invalid json');
+
+      // Items should remain the same
+      items = el.shadowRoot?.querySelectorAll('.ck-primitive-array__item');
+      expect(items?.length).toBe(3);
+      expect(items?.[0]?.textContent).toBe('a');
+      expect(items?.[1]?.textContent).toBe('b');
+      expect(items?.[2]?.textContent).toBe('c');
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+  });
 });

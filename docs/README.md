@@ -63,6 +63,30 @@ Import and use in your HTML:
 <ck-primitive-array name="Guest" color="rgb(255, 0, 0)"></ck-primitive-array>
 ```
 
+##### `items`
+- **Type**: JSON array string
+- **Default**: `[]` (empty)
+- **Description**: Array of primitive values to display as items
+
+**Supported Types**: Strings, numbers, and booleans. Objects, arrays, and null values are filtered out.
+
+```html
+<!-- Strings -->
+<ck-primitive-array items='["apple", "banana", "cherry"]'></ck-primitive-array>
+
+<!-- Numbers (coerced to strings) -->
+<ck-primitive-array items='[1, 2, 3, 4, 5]'></ck-primitive-array>
+
+<!-- Booleans (coerced to strings) -->
+<ck-primitive-array items='[true, false]'></ck-primitive-array>
+
+<!-- Mixed primitives (objects/arrays/null filtered out) -->
+<ck-primitive-array items='["text", 42, true, null, "more"]'></ck-primitive-array>
+<!-- Renders: "text", "42", "true", "more" -->
+```
+
+**Error Handling**: Invalid JSON logs an error to console and preserves the previous valid state.
+
 ### JavaScript API
 
 You can also manipulate the component programmatically:
@@ -74,10 +98,15 @@ const greeting = document.querySelector('ck-primitive-array');
 // Update properties
 greeting.name = 'New Name';
 greeting.color = '#00ff00';
+greeting.items = ['item1', 'item2', 'item3'];
 
 // Or use attributes
 greeting.setAttribute('name', 'Another Name');
 greeting.setAttribute('color', 'purple');
+greeting.setAttribute('items', '["a", "b", "c"]');
+
+// Get current items
+const currentItems = greeting.items; // Returns: string[]
 ```
 
 ### Examples
@@ -113,6 +142,47 @@ greeting.setAttribute('color', 'purple');
     greeting.name = e.target.value || 'World';
   });
 </script>
+```
+
+#### Example 3: Items List
+
+```html
+<!-- Declarative items -->
+<ck-primitive-array 
+  name="Shopping List" 
+  items='["Milk", "Eggs", "Bread"]'>
+</ck-primitive-array>
+
+<!-- Dynamic items -->
+<ck-primitive-array id="todo-list"></ck-primitive-array>
+
+<script>
+  const todoList = document.getElementById('todo-list');
+  todoList.name = 'My Tasks';
+  todoList.items = ['Write code', 'Test features', 'Deploy'];
+  
+  // Add item dynamically
+  setTimeout(() => {
+    const currentItems = todoList.items;
+    todoList.items = [...currentItems, 'Celebrate!'];
+  }, 2000);
+</script>
+```
+
+#### Example 4: Type Coercion
+
+```html
+<!-- Numbers become strings -->
+<ck-primitive-array 
+  name="Fibonacci Sequence" 
+  items='[1, 1, 2, 3, 5, 8, 13]'>
+</ck-primitive-array>
+
+<!-- Booleans become strings -->
+<ck-primitive-array 
+  name="Boolean Values" 
+  items='[true, false, true]'>
+</ck-primitive-array>
 ```
 
 ### Browser Support

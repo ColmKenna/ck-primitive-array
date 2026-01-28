@@ -54,7 +54,7 @@ export class CkPrimitiveArray extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['name', 'color'];
+    return ['name', 'color', 'items'];
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -77,6 +77,39 @@ export class CkPrimitiveArray extends HTMLElement {
 
   set color(value: string) {
     this.setAttribute('color', value);
+  }
+
+  get items(): string[] {
+    const parsed = this.parseItems();
+    return parsed !== null ? parsed : [];
+  }
+
+  set items(value: string[]) {
+    this.setAttribute('items', JSON.stringify(value));
+  }
+
+  private parseItems(): string[] | null {
+    const itemsAttr = this.getAttribute('items');
+    if (!itemsAttr) return [];
+
+    try {
+      const parsed = JSON.parse(itemsAttr);
+      if (!Array.isArray(parsed)) return [];
+
+      // Filter to primitives only and coerce to strings
+      return parsed
+        .filter(item => {
+          const type = typeof item;
+          return type === 'string' || type === 'number' || type === 'boolean';
+        })
+        .map(String);
+    } catch (error) {
+      (globalThis as any).console?.error(
+        'Failed to parse items attribute:',
+        error
+      );
+      return null; // Return null to signal error
+    }
   }
 
   private render() {
@@ -146,6 +179,29 @@ export class CkPrimitiveArray extends HTMLElement {
     if (this.messageElement) {
       this.messageElement.textContent = `Hello, ${this.name}!`;
       (this.messageElement.style as CSSStyleDeclaration).color = this.color;
+    }
+
+    // Render items from attribute
+    if (this.listElement) {
+      const itemsToRender = this.parseItems();
+
+      // Only update items if parsing was successful (null means error)
+      if (itemsToRender !== null) {
+        // Clear existing items (but keep placeholder)
+        const existingItems = this.listElement.querySelectorAll(
+          '.ck-primitive-array__item'
+        );
+        existingItems.forEach(item => item.remove());
+
+        // Add items from attribute
+        itemsToRender.forEach(itemText => {
+          const item = document.createElement('div');
+          item.className = 'ck-primitive-array__item';
+          item.setAttribute('role', 'listitem');
+          item.textContent = itemText;
+          this.listElement!.appendChild(item);
+        });
+      }
     }
 
     // Ensure placeholder visibility

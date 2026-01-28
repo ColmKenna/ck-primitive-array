@@ -130,6 +130,11 @@
             padding: 0;
         }
 
+        .comment {
+            color: #5c6370;
+            font-style: italic;
+        }
+
         .highlight {
             color: #e06c75;
         }
@@ -250,6 +255,129 @@ element.<span class="highlight">name</span> = <span class="string">'Dynamic'</sp
 element.<span class="highlight">color</span> = <span class="string">'#e67e22'</span>;
 <span class="keyword">document</span>.body.appendChild(element);</code></pre>
         </div>
+
+        <!-- Items Attribute -->
+        <div class="section">
+            <h2>6. Items Attribute - String Arrays</h2>
+            <p>Display lists of items using the <code>items</code> attribute with JSON arrays.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Fruits</h3>
+                    <ck-primitive-array 
+                        name="Shopping List" 
+                        items='["Apple", "Banana", "Cherry", "Date"]'>
+                    </ck-primitive-array>
+                </div>
+                <div class="demo-item">
+                    <h3>Programming Languages</h3>
+                    <ck-primitive-array 
+                        name="Tech Stack" 
+                        items='["JavaScript", "TypeScript", "Python"]'
+                        color="#0066cc">
+                    </ck-primitive-array>
+                </div>
+            </div>
+            <pre><code><span class="keyword">&lt;ck-primitive-array</span>
+    <span class="highlight">name</span>=<span class="string">"Shopping List"</span>
+    <span class="highlight">items</span>=<span class="string">'["Apple", "Banana", "Cherry"]'</span><span class="keyword">&gt;
+&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
+        <!-- Number Coercion -->
+        <div class="section">
+            <h2>7. Items Attribute - Number Coercion</h2>
+            <p>Numbers are automatically converted to strings.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Fibonacci Sequence</h3>
+                    <ck-primitive-array 
+                        name="Fibonacci" 
+                        items='[1, 1, 2, 3, 5, 8, 13, 21]'
+                        color="#e74c3c">
+                    </ck-primitive-array>
+                </div>
+                <div class="demo-item">
+                    <h3>Years</h3>
+                    <ck-primitive-array 
+                        name="Timeline" 
+                        items='[2020, 2021, 2022, 2023, 2024, 2025, 2026]'
+                        color="#9b59b6">
+                    </ck-primitive-array>
+                </div>
+            </div>
+            <pre><code><span class="keyword">&lt;ck-primitive-array</span>
+    <span class="highlight">name</span>=<span class="string">"Fibonacci"</span>
+    <span class="highlight">items</span>=<span class="string">'[1, 1, 2, 3, 5, 8, 13, 21]'</span><span class="keyword">&gt;
+&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
+        <!-- Boolean Coercion -->
+        <div class="section">
+            <h2>8. Items Attribute - Boolean Values</h2>
+            <p>Booleans are converted to "true" and "false" strings.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Test Results</h3>
+                    <ck-primitive-array 
+                        name="Unit Tests" 
+                        items='[true, true, false, true, true]'
+                        color="#2ecc71">
+                    </ck-primitive-array>
+                </div>
+            </div>
+            <pre><code><span class="keyword">&lt;ck-primitive-array</span>
+    <span class="highlight">name</span>=<span class="string">"Unit Tests"</span>
+    <span class="highlight">items</span>=<span class="string">'[true, true, false, true]'</span><span class="keyword">&gt;
+&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
+        <!-- Mixed Types -->
+        <div class="section">
+            <h2>9. Items Attribute - Mixed Primitives</h2>
+            <p>Mix strings, numbers, and booleans. Objects, arrays, and null are filtered out.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Mixed Types (objects/null filtered)</h3>
+                    <ck-primitive-array 
+                        name="Mixed Data" 
+                        items='["text", 42, true, null, "more", {"x":1}, false, [1,2]]'
+                        color="#f39c12">
+                    </ck-primitive-array>
+                    <p style="margin-top: 1rem; font-size: 0.9rem; color: #999;">
+                        ⚠️ Objects, arrays, and null values are automatically filtered out
+                    </p>
+                </div>
+            </div>
+            <pre><code><span class="comment">// Renders: "text", "42", "true", "more", "false"</span>
+<span class="keyword">&lt;ck-primitive-array</span>
+    <span class="highlight">items</span>=<span class="string">'["text", 42, true, null, {"x":1}]'</span><span class="keyword">&gt;
+&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
+        <!-- Dynamic Items -->
+        <div class="section">
+            <h2>10. Dynamic Items via JavaScript</h2>
+            <p>Add and update items programmatically using the <code>items</code> property.</p>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="itemInput">Add Item:</label>
+                    <input type="text" id="itemInput" placeholder="Type an item and press Enter">
+                </div>
+                <button id="clearItemsBtn">Clear All Items</button>
+            </div>
+            <div style="margin-top: 1rem;">
+                <ck-primitive-array 
+                    id="dynamicItems" 
+                    name="Dynamic List"
+                    color="#1abc9c">
+                </ck-primitive-array>
+            </div>
+            <pre><code><span class="keyword">const</span> element = <span class="keyword">document</span>.querySelector(<span class="string">'ck-primitive-array'</span>);
+element.<span class="highlight">items</span> = [<span class="string">'Item 1'</span>, <span class="string">'Item 2'</span>, <span class="string">'Item 3'</span>];
+
+<span class="comment">// Add a new item</span>
+element.<span class="highlight">items</span> = [...element.items, <span class="string">'New Item'</span>];</code></pre>
+        </div>
     </div>
 
     <script type="module">
@@ -278,6 +406,23 @@ element.<span class="highlight">color</span> = <span class="string">'#e67e22'</s
             counter++;
             const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
             const element = document.createElement('ck-primitive-array');
+
+        // Setup dynamic items
+        const dynamicItems = document.getElementById('dynamicItems');
+        const itemInput = document.getElementById('itemInput');
+        const clearItemsBtn = document.getElementById('clearItemsBtn');
+
+        itemInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.target.value.trim()) {
+                const currentItems = dynamicItems.items || [];
+                dynamicItems.items = [...currentItems, e.target.value.trim()];
+                e.target.value = '';
+            }
+        });
+
+        clearItemsBtn.addEventListener('click', () => {
+            dynamicItems.items = [];
+        });
             element.name = `Dynamic #${counter}`;
             element.color = colors[counter % colors.length];
             element.style.marginBottom = '1rem';
