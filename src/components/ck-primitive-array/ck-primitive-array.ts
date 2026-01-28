@@ -1,4 +1,7 @@
-import { ckPrimitiveArraySheet, ckPrimitiveArrayCSS } from './ck-primitive-array.styles';
+import {
+  ckPrimitiveArraySheet,
+  ckPrimitiveArrayCSS,
+} from './ck-primitive-array.styles';
 
 export class CkPrimitiveArray extends HTMLElement {
   private shadow: ShadowRoot;
@@ -59,7 +62,9 @@ export class CkPrimitiveArray extends HTMLElement {
     // by keeping per-instance differences in CSS custom properties.
     if (!ckPrimitiveArraySheet) {
       // Only inject the fallback style once per shadow root
-      if (!this.shadow.querySelector('style[data-ck-primitive-array-fallback]')) {
+      if (
+        !this.shadow.querySelector('style[data-ck-primitive-array-fallback]')
+      ) {
         const style = document.createElement('style');
         style.setAttribute('data-ck-primitive-array-fallback', '');
         style.textContent = ckPrimitiveArrayCSS;
@@ -80,7 +85,9 @@ export class CkPrimitiveArray extends HTMLElement {
     // For testability (unit tests inspect shadowRoot.innerHTML), set the color
     // as an inline style on the message element so the color string appears in
     // the serialized HTML. Runtime styling still relies on the CSS variable.
-    const msg = this.shadow.querySelector('.ck-primitive-array__message') as HTMLElement | null;
+    const msg = this.shadow.querySelector(
+      '.ck-primitive-array__message'
+    ) as HTMLElement | null;
     if (msg) msg.style.color = this.color;
   }
 }

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CkPrimitiveArray Component Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 2rem;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+            padding: 1.5rem;
+            background: #fafafa;
+            border-radius: 6px;
+            border-left: none;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .section p {
+            color: #666;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .demo-item {
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .demo-item h3 {
+            font-size: 1rem;
+            color: #495057;
+            margin-bottom: 1rem;
+        }
+
+        .controls {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="color"] {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus,
+        input[type="color"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        code {
+            background: #282c34;
+            color: #61dafb;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .highlight {
+            color: #e06c75;
+        }
+
+        .keyword {
+            color: #c678dd;
+        }
+
+        .string {
+            color: #98c379;
+        }
+
+        button {
+            background: #333;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        #dynamic-demo {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 CkPrimitiveArray Component Demo</h1>
+
+        <!-- Basic Usage -->
+        <div class="section">
+            <h2>1. Basic Usage</h2>
+            <p>The simplest way to use the component with default values.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Default Component</h3>
+                    <ck-primitive-array></ck-primitive-array>
+                </div>
+            </div>
+            <pre><code><span class="keyword">&lt;ck-primitive-array&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
+        <!-- Custom Name -->
+        <div class="section">
+            <h2>2. Custom Name</h2>
+            <p>Customize the greeting message by setting the <code>name</code> attribute.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>name="Developer"</h3>
+                    <ck-primitive-array name="Developer"></ck-primitive-array>
+                </div>
+                <div class="demo-item">
+                    <h3>name="Designer"</h3>
+                    <ck-primitive-array name="Designer"></ck-primitive-array>
+                </div>
+                <div class="demo-item">
+                    <h3>name="Product Manager"</h3>
+                    <ck-primitive-array name="Product Manager"></ck-primitive-array>
+                </div>
+            </div>
+            <pre><code><span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">name</span>=<span class="string">"Developer"</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
+        <!-- Custom Color -->
+        <div class="section">
+            <h2>3. Custom Color</h2>
+            <p>Change the message color using the <code>color</code> attribute.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>color="#e74c3c"</h3>
+                    <ck-primitive-array name="Red Theme" color="#e74c3c"></ck-primitive-array>
+                </div>
+                <div class="demo-item">
+                    <h3>color="#3498db"</h3>
+                    <ck-primitive-array name="Blue Theme" color="#3498db"></ck-primitive-array>
+                </div>
+                <div class="demo-item">
+                    <h3>color="#2ecc71"</h3>
+                    <ck-primitive-array name="Green Theme" color="#2ecc71"></ck-primitive-array>
+                </div>
+            </div>
+            <pre><code><span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">name</span>=<span class="string">"Red Theme"</span> <span class="highlight">color</span>=<span class="string">"#e74c3c"</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
+        <!-- JavaScript Control -->
+        <div class="section">
+            <h2>4. JavaScript Control</h2>
+            <p>Dynamically update the component using JavaScript properties.</p>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="nameInput">Name:</label>
+                    <input type="text" id="nameInput" placeholder="Enter a name" value="JavaScript User">
+                </div>
+                <div class="control-group">
+                    <label for="colorInput">Color:</label>
+                    <input type="color" id="colorInput" value="#9b59b6">
+                </div>
+            </div>
+            <div id="dynamic-demo">
+                <ck-primitive-array id="dynamicComponent" name="JavaScript User" color="#9b59b6"></ck-primitive-array>
+            </div>
+            <pre><code><span class="keyword">const</span> element = <span class="keyword">document</span>.querySelector(<span class="string">'ck-primitive-array'</span>);
+element.<span class="highlight">name</span> = <span class="string">'JavaScript User'</span>;
+element.<span class="highlight">color</span> = <span class="string">'#9b59b6'</span>;</code></pre>
+        </div>
+
+        <!-- Programmatic Creation -->
+        <div class="section">
+            <h2>5. Programmatic Creation</h2>
+            <p>Create and configure components entirely via JavaScript.</p>
+            <button id="createBtn">Create New Component</button>
+            <div id="programmatic-container" style="margin-top: 1rem;"></div>
+            <pre><code><span class="keyword">const</span> element = <span class="keyword">document</span>.createElement(<span class="string">'ck-primitive-array'</span>);
+element.<span class="highlight">name</span> = <span class="string">'Dynamic'</span>;
+element.<span class="highlight">color</span> = <span class="string">'#e67e22'</span>;
+<span class="keyword">document</span>.body.appendChild(element);</code></pre>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the component from the built distribution
+        import '../dist/ck-primitive-array/ck-primitive-array.esm.js';
+
+        // Setup dynamic controls
+        const dynamicComponent = document.getElementById('dynamicComponent');
+        const nameInput = document.getElementById('nameInput');
+        const colorInput = document.getElementById('colorInput');
+
+        nameInput.addEventListener('input', (e) => {
+            dynamicComponent.name = e.target.value || 'World';
+        });
+
+        colorInput.addEventListener('input', (e) => {
+            dynamicComponent.color = e.target.value;
+        });
+
+        // Setup programmatic creation button
+        const createBtn = document.getElementById('createBtn');
+        const container = document.getElementById('programmatic-container');
+        let counter = 0;
+
+        createBtn.addEventListener('click', () => {
+            counter++;
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
+            const element = document.createElement('ck-primitive-array');
+            element.name = `Dynamic #${counter}`;
+            element.color = colors[counter % colors.length];
+            element.style.marginBottom = '1rem';
+            container.appendChild(element);
+        });
+    </script>
+</body>
+</html>

@@ -1,36 +1,36 @@
 export const ckPrimitiveArrayCSS = `
 :host {
   display: block;
-  padding: 1rem;
-  font-family: Arial, sans-serif;
+  --ck-primitive-array-background: transparent;
+  --ck-primitive-array-color: inherit;
+  --ck-primitive-array-padding: 0;
+  --ck-primitive-array-border-radius: 0;
+  --ck-primitive-array-box-shadow: none;
+  --ck-primitive-array-text-align: center;
+  --ck-primitive-array-message-font-size: 1.5rem;
+  --ck-primitive-array-subtitle-font-size: 1rem;
+  --ck-primitive-array-subtitle-opacity: 0.8;
 }
 
 .ck-primitive-array {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 2rem;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
-}
-
-.ck-primitive-array:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: var(--ck-primitive-array-background);
+  color: var(--ck-primitive-array-color);
+  padding: var(--ck-primitive-array-padding);
+  border-radius: var(--ck-primitive-array-border-radius);
+  text-align: var(--ck-primitive-array-text-align);
+  box-shadow: var(--ck-primitive-array-box-shadow);
 }
 
 .ck-primitive-array__message {
-  font-size: 1.5rem;
+  font-size: var(--ck-primitive-array-message-font-size);
   margin: 0;
-  /* per-instance color via CSS custom property */
-  color: var(--ck-primitive-array-color, #333);
+  color: var(--ck-primitive-array-color);
 }
 
 .ck-primitive-array__subtitle {
-  font-size: 1rem;
+  font-size: var(--ck-primitive-array-subtitle-font-size);
   margin: 0.5rem 0 0 0;
-  opacity: 0.8;
+  opacity: var(--ck-primitive-array-subtitle-opacity);
 }
 `;
 
