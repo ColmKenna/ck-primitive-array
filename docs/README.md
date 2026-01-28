@@ -130,6 +130,37 @@ el.addItem();
 el.addItem('Buy milk');
 ```
 
+### Keyboard Shortcuts
+
+#### Enter Key
+
+When focused on an item input field, pressing **Enter** adds a new empty item below:
+
+```
+User types in input → Presses Enter → New item added → Focus moves to Add button
+```
+
+**Behavior**:
+- ✅ Adds a new empty item to the list
+- ✅ Preserves the current input's value
+- ✅ Moves focus to the Add button
+- ✅ Dispatches a `change` event
+- ❌ Does nothing if `readonly` attribute is present
+
+**Example**:
+```html
+<ck-primitive-array items='["apple"]'></ck-primitive-array>
+
+<!-- User flow:
+1. User focuses the "apple" input
+2. User types "banana" (value updates to "banana")
+3. User presses Enter
+4. New empty input appears below
+5. Focus moves to Add button
+6. Original input still shows "banana"
+-->
+```
+
 ### JavaScript API
 
 You can also manipulate the component programmatically:

@@ -249,6 +249,14 @@ export class CkPrimitiveArray extends HTMLElement {
     input.addEventListener('input', () => {
       itemState.value = input.value;
     });
+    input.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        if (!this.hasAttribute('readonly')) {
+          this.addItem();
+          this.addButton?.focus();
+        }
+      }
+    });
 
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';

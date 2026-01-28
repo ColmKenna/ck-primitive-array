@@ -80,6 +80,26 @@ The Add button calls `addItem()` with no argument (empty value):
 4. **Event**: A `change` CustomEvent is dispatched with `detail.items` containing the updated array
 5. **Readonly/Disabled**: The Add button is disabled when the `readonly` or `disabled` attribute is present
 
+### Keyboard Interaction
+
+#### Enter Key in Item Input
+
+When the user presses **Enter** while focused on an item input:
+
+1. **Default Behavior**: Calls `addItem()` to create a new empty item
+2. **Focus Management**: After adding, focus moves to the Add button
+3. **Readonly Respect**: If `readonly` attribute is present, Enter key does nothing
+4. **Event Dispatch**: A `change` CustomEvent is dispatched (via `addItem()`)
+5. **Value Preservation**: The original input's value is preserved in state
+
+**Example Usage**:
+```javascript
+// User types in input, then presses Enter
+// → New empty item added below
+// → Focus moves to Add button
+// → Original input keeps its typed value
+```
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -197,7 +217,13 @@ element.setAttribute('color', 'blue');
 32. ✅ addItem() without value defaults to empty string (1.5.10)
 33. ✅ addItem() with value dispatches change event with that value (1.5.11)
 
-**Total**: 40 tests passing
+34. ✅ Enter in empty input adds item (1.6.1)
+35. ✅ Enter in filled input adds item and preserves original value (1.6.2)
+36. ✅ Focus moves to Add button after Enter adds item (1.6.3)
+37. ✅ Enter is no-op when readonly (1.6.4)
+38. ✅ Change event dispatched on Enter add (1.6.5)
+
+**Total**: 45 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

@@ -300,6 +300,41 @@ The Add button's click handler calls `addItem()` with no argument.
 
 The Add button is disabled when the `readonly` or `disabled` boolean attribute is present on the host element. This state is updated on every render via `this.addButton.disabled`.
 
+### Keyboard Event Handling
+
+#### Enter Key in Item Inputs
+
+Each item input has a `keydown` event listener attached in `createItemRow()`:
+
+```typescript
+input.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    if (!this.hasAttribute('readonly')) {
+      this.addItem();
+      this.addButton?.focus();
+    }
+  }
+});
+```
+
+**Implementation Details**:
+1. **Event Type**: `keydown` (fires before default browser behavior)
+2. **Key Detection**: Uses `e.key === 'Enter'` (modern KeyboardEvent API)
+3. **Readonly Check**: Respects `readonly` attribute by checking `hasAttribute()`
+4. **Action**: Calls existing `addItem()` method (reuses logic, dispatches change event)
+5. **Focus Management**: Moves focus to Add button using `focus()` method
+
+**Lifecycle**:
+- Listener attached when input is created in `createItemRow()`
+- Listener removed automatically when input is removed from DOM
+- No explicit cleanup needed (browser handles garbage collection)
+
+**Design Decisions**:
+- ✅ Inline handler (simple, no need for bound method storage)
+- ✅ Leverages existing `addItem()` logic (DRY principle)
+- ✅ Respects readonly state (consistent with button behavior)
+- ✅ Provides keyboard accessibility (complements mouse interaction)
+
 ## Future Enhancements
 
 ### Potential Features

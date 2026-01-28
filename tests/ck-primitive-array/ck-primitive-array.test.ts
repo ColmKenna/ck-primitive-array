@@ -654,4 +654,153 @@ describe('CkPrimitiveArray Component', () => {
       document.body.removeChild(el);
     });
   });
+
+  describe('Add Item via Enter Key (1.6)', () => {
+    test('Enter in empty input adds item', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      const initialCount = el.items.length;
+
+      // Simulate Enter key press
+      const enterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+      });
+      input.dispatchEvent(enterEvent);
+
+      expect(el.items.length).toBe(initialCount + 1);
+
+      document.body.removeChild(el);
+    });
+
+    test('Enter in filled input adds item and preserves original value', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'test';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const initialCount = el.items.length;
+
+      // Simulate Enter key press
+      const enterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+      });
+      input.dispatchEvent(enterEvent);
+
+      expect(el.items.length).toBe(initialCount + 1);
+      expect(el.items[0].value).toBe('test');
+
+      document.body.removeChild(el);
+    });
+
+    test('Focus moves to Add button after Enter adds item', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Simulate Enter key press
+      const enterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+      });
+      input.dispatchEvent(enterEvent);
+
+      expect(el.shadowRoot?.activeElement).toBe(addButton);
+
+      document.body.removeChild(el);
+    });
+
+    test('Enter is no-op when readonly', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click(); // This won't work since button is disabled, so add programmatically
+      el.addItem();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      const initialCount = el.items.length;
+
+      // Simulate Enter key press
+      const enterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+      });
+      input.dispatchEvent(enterEvent);
+
+      expect(el.items.length).toBe(initialCount);
+
+      document.body.removeChild(el);
+    });
+
+    test('Change event dispatched on Enter add', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      // Simulate Enter key press
+      const enterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+      });
+      input.dispatchEvent(enterEvent);
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          items: Array<{ id: string; value: string; deleted: boolean }>;
+        };
+      };
+      expect(event.detail).toBeDefined();
+      expect(event.detail.items).toHaveLength(2); // Initial item + new item
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+  });
 });
