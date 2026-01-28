@@ -1,13 +1,13 @@
 {
-  "name": "@colmkenna/ck-webcomponents",
+  "name": "@colmkenna/ck-primitive-array",
   "version": "1.0.0",
   "type": "module",
   "description": "A web component library built with Rollup",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "main": "dist/hello-world/hello-world.js",
-  "module": "dist/hello-world/hello-world.esm.js",
+  "main": "dist/ck-primitive-array/ck-primitive-array.js",
+  "module": "dist/ck-primitive-array/ck-primitive-array.esm.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -58,10 +58,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ColmKenna/ckWebComponents.git"
+    "url": "https://github.com/ColmKenna/ck-primitive-array.git"
   },
   "bugs": {
-    "url": "https://github.com/ColmKenna/ckWebComponents/issues"
+    "url": "https://github.com/ColmKenna/ck-primitive-array/issues"
   },
-  "homepage": "https://github.com/ColmKenna/ckWebComponents#readme"
+  "homepage": "https://github.com/ColmKenna/ck-primitive-array#readme"
 }

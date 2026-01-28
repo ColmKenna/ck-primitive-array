@@ -1,11 +1,11 @@
-export const helloWorldCSS = `
+export const ckPrimitiveArrayCSS = `
 :host {
   display: block;
   padding: 1rem;
   font-family: Arial, sans-serif;
 }
 
-.hello-world {
+.ck-primitive-array {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 2rem;
@@ -15,19 +15,19 @@ export const helloWorldCSS = `
   transition: transform 0.2s ease;
 }
 
-.hello-world:hover {
+.ck-primitive-array:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.message {
+.ck-primitive-array__message {
   font-size: 1.5rem;
   margin: 0;
   /* per-instance color via CSS custom property */
-  color: var(--hw-color, #333);
+  color: var(--ck-primitive-array-color, #333);
 }
 
-.subtitle {
+.ck-primitive-array__subtitle {
   font-size: 1rem;
   margin: 0.5rem 0 0 0;
   opacity: 0.8;
@@ -35,7 +35,7 @@ export const helloWorldCSS = `
 `;
 
 // Try to create a constructable stylesheet where supported. Fall back to null.
-export const helloWorldSheet: CSSStyleSheet | null = (() => {
+export const ckPrimitiveArraySheet: CSSStyleSheet | null = (() => {
   try {
     // CSSStyleSheet may not be available in older browsers
     // create and populate the sheet once at module-eval time
@@ -43,7 +43,7 @@ export const helloWorldSheet: CSSStyleSheet | null = (() => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore: may not exist in all targets
     const sheet = new CSSStyleSheet();
-    sheet.replaceSync(helloWorldCSS);
+    sheet.replaceSync(ckPrimitiveArrayCSS);
     return sheet;
   } catch {
     return null;

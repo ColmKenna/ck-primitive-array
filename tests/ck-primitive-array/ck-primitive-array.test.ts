@@ -1,18 +1,18 @@
-import { HelloWorld } from '../../src/components/hello-world/hello.world';
+import { CkPrimitiveArray } from '../../src/components/ck-primitive-array/ck-primitive-array';
 
 // Define the custom element before running tests
 beforeAll(() => {
-  if (!customElements.get('hello-world')) {
-    customElements.define('hello-world', HelloWorld);
+  if (!customElements.get('ck-primitive-array')) {
+    customElements.define('ck-primitive-array', CkPrimitiveArray);
   }
 });
 
-describe('HelloWorld Component', () => {
-  let element: HelloWorld;
+describe('CkPrimitiveArray Component', () => {
+  let element: CkPrimitiveArray;
 
   beforeEach(() => {
     // Create a fresh instance for each test
-    element = new HelloWorld();
+    element = new CkPrimitiveArray();
     document.body.appendChild(element);
   });
 
@@ -24,7 +24,7 @@ describe('HelloWorld Component', () => {
   });
 
   test('should create an instance', () => {
-    expect(element).toBeInstanceOf(HelloWorld);
+    expect(element).toBeInstanceOf(CkPrimitiveArray);
     expect(element).toBeInstanceOf(HTMLElement);
   });
 
@@ -61,7 +61,7 @@ describe('HelloWorld Component', () => {
   });
 
   test('should observe name and color attributes', () => {
-    const observedAttributes = HelloWorld.observedAttributes;
+    const observedAttributes = CkPrimitiveArray.observedAttributes;
     expect(observedAttributes).toContain('name');
     expect(observedAttributes).toContain('color');
   });

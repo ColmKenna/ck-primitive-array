@@ -24,42 +24,42 @@ First, configure npm to use GitHub Packages for this scope. Create or update you
 Then install the package:
 
 ```bash
-npm install @colmkenna/ck-webcomponents
+npm install @colmkenna/ck-primitive-array
 ```
 
 ### Via CDN (if published to a CDN)
 
 ```html
-<script src="https://unpkg.com/@colmkenna/ck-webcomponents@latest/dist/hello-world/hello-world.min.js"></script>
+<script src="https://unpkg.com/@colmkenna/ck-primitive-array@latest/dist/ck-primitive-array/ck-primitive-array.min.js"></script>
 ```
 
 Then import in your JavaScript:
 
 ```javascript
-import '@colmkenna/ck-webcomponents';
+import '@colmkenna/ck-primitive-array';
 ```
 
 Or import specific components:
 
 ```javascript
-import { HelloWorld } from '@colmkenna/ck-webcomponents';
+import { CkPrimitiveArray } from '@colmkenna/ck-primitive-array';
 ```
 
 ## 🧩 Components
 
-### HelloWorld Component
+### CkPrimitiveArray Component
 
 A simple greeting component with customizable name and color.
 
 ```html
 <!-- Basic usage -->
-<hello-world></hello-world>
+<ck-primitive-array></ck-primitive-array>
 
 <!-- With custom name -->
-<hello-world name="Developer"></hello-world>
+<ck-primitive-array name="Developer"></ck-primitive-array>
 
 <!-- With custom name and color -->
-<hello-world name="Developer" color="#ff6b6b"></hello-world>
+<ck-primitive-array name="Developer" color="#ff6b6b"></ck-primitive-array>
 ```
 
 #### Attributes
@@ -74,9 +74,9 @@ A simple greeting component with customizable name and color.
 The component also supports JavaScript property access:
 
 ```javascript
-const helloWorld = document.querySelector('hello-world');
-helloWorld.name = 'New Name';
-helloWorld.color = '#blue';
+const primitiveArray = document.querySelector('ck-primitive-array');
+primitiveArray.name = 'New Name';
+primitiveArray.color = '#blue';
 ```
 
 ## 🛠️ Development
@@ -90,8 +90,8 @@ helloWorld.color = '#blue';
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/ColmKenna/ckWebComponents.git
-cd ckWebComponents
+git clone https://github.com/ColmKenna/ck-primitive-array.git
+cd ck-primitive-array
 ```
 
 2. Install dependencies:
@@ -119,18 +119,18 @@ npm run serve
 ### Project Structure
 
 ```
-webcomponent-library/
+ck-primitive-array/
 ├── src/
 │   ├── components/
-│   │   └── hello-world/
-│   │       └── hello.world.ts
+│   │   └── ck-primitive-array/
+│   │       └── ck-primitive-array.ts
 │   └── index.ts
 ├── dist/
 │   ├── index.html (demo page)
-│   ├── hello-world/
-│   │   ├── hello-world.js (UMD build)
-│   │   ├── hello-world.esm.js (ES module build)
-│   │   └── hello-world.min.js (minified UMD build)
+│   ├── ck-primitive-array/
+│   │   ├── ck-primitive-array.js (UMD build)
+│   │   ├── ck-primitive-array.esm.js (ES module build)
+│   │   └── ck-primitive-array.min.js (minified UMD build)
 │   └── index.d.ts (TypeScript definitions)
 ├── package.json
 ├── rollup.config.js
@@ -292,11 +292,11 @@ After installing, you can use the components in your HTML:
 <html>
 <head>
     <script type="module">
-      import '@colmkenna/ck-webcomponents';
+      import '@colmkenna/ck-primitive-array';
     </script>
 </head>
 <body>
-    <hello-world name="GitHub Packages"></hello-world>
+    <ck-primitive-array name="GitHub Packages"></ck-primitive-array>
 </body>
 </html>
 ```

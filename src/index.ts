@@ -1,5 +1,5 @@
 // Export all components
-export { HelloWorld } from './components/hello-world/hello.world';
+export { CkPrimitiveArray } from './components/ck-primitive-array/ck-primitive-array';
 
 // Auto-register all components
-import './components/hello-world/hello.world';
+import './components/ck-primitive-array/ck-primitive-array';
