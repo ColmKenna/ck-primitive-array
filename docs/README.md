@@ -66,7 +66,7 @@ Import and use in your HTML:
 ##### `items`
 - **Type**: JSON array string
 - **Default**: `[]` (empty)
-- **Description**: Array of primitive values to display as items
+- **Description**: Array of primitive values to display as editable rows
 
 **Supported Types**: Strings, numbers, and booleans. Objects, arrays, and null values are filtered out.
 
@@ -87,6 +87,49 @@ Import and use in your HTML:
 
 **Error Handling**: Invalid JSON logs an error to console and preserves the previous valid state.
 
+##### `readonly`
+- **Type**: Boolean attribute
+- **Description**: When present, disables the Add button
+
+```html
+<ck-primitive-array readonly items='["locked"]'></ck-primitive-array>
+```
+
+##### `disabled`
+- **Type**: Boolean attribute
+- **Description**: When present, disables the Add button
+
+```html
+<ck-primitive-array disabled items='["locked"]'></ck-primitive-array>
+```
+
+### Add Button
+
+Clicking the Add button appends a new empty row to the list. The new input automatically receives focus.
+
+A `change` event is dispatched after each add, with `event.detail.items` containing the updated items array.
+
+```javascript
+const el = document.querySelector('ck-primitive-array');
+el.addEventListener('change', (e) => {
+  console.log('Items changed:', e.detail.items);
+});
+```
+
+#### Programmatic Add with Value
+
+You can call `addItem()` directly with an optional value:
+
+```javascript
+const el = document.querySelector('ck-primitive-array');
+
+// Add empty item (same as clicking the Add button)
+el.addItem();
+
+// Add item with a pre-filled value
+el.addItem('Buy milk');
+```
+
 ### JavaScript API
 
 You can also manipulate the component programmatically:
@@ -106,7 +149,7 @@ greeting.setAttribute('color', 'purple');
 greeting.setAttribute('items', '["a", "b", "c"]');
 
 // Get current items
-const currentItems = greeting.items; // Returns: string[]
+const currentItems = greeting.items; // Returns: { id, value, deleted }[]
 ```
 
 ### Examples
@@ -164,7 +207,8 @@ const currentItems = greeting.items; // Returns: string[]
   // Add item dynamically
   setTimeout(() => {
     const currentItems = todoList.items;
-    todoList.items = [...currentItems, 'Celebrate!'];
+    const values = currentItems.map(item => item.value);
+    todoList.items = [...values, 'Celebrate!'];
   }, 2000);
 </script>
 ```

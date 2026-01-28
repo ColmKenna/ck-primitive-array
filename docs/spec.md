@@ -25,6 +25,8 @@ The `CkPrimitiveArray` is a web component that displays a greeting message with 
 | `name`    | string | "World" | Name to display in greeting |
 | `color`   | string | "#333"  | Text color for the message  |
 | `items`   | JSON   | `[]`    | JSON array of primitive values to display as items |
+| `readonly`| boolean| –       | When present, disables the Add button |
+| `disabled`| boolean| –       | When present, disables the Add button |
 
 ### Properties
 
@@ -36,9 +38,9 @@ The `CkPrimitiveArray` is a web component that displays a greeting message with 
 - **Getter**: Returns the `color` attribute value or "#333" if not set
 - **Setter**: Sets the `color` attribute
 
-#### `items: string[]`
-- **Getter**: Parses the `items` attribute JSON and returns array of strings. Returns empty array if attribute is missing or invalid
-- **Setter**: Serializes array to JSON and sets the `items` attribute
+#### `items: { id: string; value: string; deleted: boolean }[]`
+- **Getter**: Returns internal item state objects with stable `id`, `value`, and `deleted` flags
+- **Setter**: Accepts an array of primitives or item-like objects and serializes their values to the `items` attribute JSON
 
 ### Items Attribute Parsing Rules
 
@@ -59,6 +61,25 @@ The `items` attribute accepts a JSON array and applies the following parsing log
    - Previous valid state is preserved on parse error
    - No items rendered if no previous state exists
 
+### Methods
+
+#### `addItem(value?: string): void`
+- **Public** method to programmatically add an item
+- **`value`** (optional): The initial value for the new item. Defaults to `''` if omitted.
+- Creates a new row with a text input pre-filled with the given value
+- The new input receives focus automatically
+- A `change` CustomEvent is dispatched with `detail.items` containing the updated array
+
+### Add Button Behavior
+
+The Add button calls `addItem()` with no argument (empty value):
+
+1. **New Item**: Creates a row with a text input (empty by default, or pre-filled if `addItem(value)` is called)
+2. **Focus**: The new input receives focus automatically
+3. **State**: `el.items` reflects the new item
+4. **Event**: A `change` CustomEvent is dispatched with `detail.items` containing the updated array
+5. **Readonly/Disabled**: The Add button is disabled when the `readonly` or `disabled` attribute is present
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -70,7 +91,7 @@ The `items` attribute accepts a JSON array and applies the following parsing log
 - Triggers initial render
 
 #### `attributeChangedCallback(name, oldValue, newValue)`
-- Observes: `name`, `color`, `items`
+- Observes: `name`, `color`, `items`, `readonly`, `disabled`
 - Triggers re-render when observed attributes change
 - For `items`, preserves previous state if new value is invalid JSON
 
@@ -87,7 +108,11 @@ The `items` attribute accepts a JSON array and applies the following parsing log
   <div class="ck-primitive-array__list" role="list" aria-label="items">
     <p class="ck-primitive-array__placeholder">No items</p>
     <!-- Items rendered here when items attribute is set -->
-    <div class="ck-primitive-array__item" role="listitem">${item}</div>
+    <div class="ck-primitive-array__item" role="listitem">
+      <input type="text" value="${item.value}" />
+      <button type="button" data-action="delete">Delete</button>
+      <button type="button" data-action="remove">X</button>
+    </div>
   </div>
   <p class="ck-primitive-array__subtitle">Welcome to our Web Component Library</p>
 </div>
@@ -159,7 +184,20 @@ element.setAttribute('color', 'blue');
 21. ✅ Invalid JSON logs error (1.3.7)
 22. ✅ Invalid JSON preserves previous state (1.3.8)
 
-**Total**: 23 tests passing
+23. ✅ Add button creates new item with empty input (1.5.1)
+24. ✅ New item input receives focus (1.5.2)
+25. ✅ Items property updated after add (1.5.3)
+26. ✅ Change event dispatched on add (1.5.4)
+27. ✅ Multiple adds work sequentially (1.5.5)
+28. ✅ Add button disabled when readonly (1.5.6)
+29. ✅ Add button disabled when disabled (1.5.7)
+
+30. ✅ Adding new item preserves existing input values (1.5.8)
+31. ✅ addItem() with value uses that value (1.5.9)
+32. ✅ addItem() without value defaults to empty string (1.5.10)
+33. ✅ addItem() with value dispatches change event with that value (1.5.11)
+
+**Total**: 40 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

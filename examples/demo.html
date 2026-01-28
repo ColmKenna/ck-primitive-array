@@ -354,9 +354,40 @@ element.<span class="highlight">color</span> = <span class="string">'#e67e22'</s
 &lt;/ck-primitive-array&gt;</span></code></pre>
         </div>
 
+        <!-- Add Button Behavior -->
+        <div class="section">
+            <h2>10. Add Button Behavior</h2>
+            <p>Click the <code>Add</code> button to append new empty items. The new input receives focus automatically. A <code>change</code> event is dispatched each time.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Empty List (click Add)</h3>
+                    <ck-primitive-array id="addDemo" name="Add Demo"></ck-primitive-array>
+                    <p id="addDemoLog" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;"></p>
+                </div>
+                <div class="demo-item">
+                    <h3>Readonly (Add disabled)</h3>
+                    <ck-primitive-array name="Readonly List" readonly items='["Locked Item"]'></ck-primitive-array>
+                </div>
+                <div class="demo-item">
+                    <h3>Disabled (Add disabled)</h3>
+                    <ck-primitive-array name="Disabled List" disabled items='["Disabled Item"]'></ck-primitive-array>
+                </div>
+            </div>
+            <pre><code><span class="comment">// Add button creates empty row, fires change event</span>
+<span class="keyword">&lt;ck-primitive-array&gt;&lt;/ck-primitive-array&gt;</span>
+
+<span class="comment">// Programmatic add with a value</span>
+<span class="keyword">const</span> el = <span class="keyword">document</span>.querySelector(<span class="string">'ck-primitive-array'</span>);
+el.<span class="highlight">addItem</span>(<span class="string">'Buy milk'</span>); <span class="comment">// pre-filled</span>
+el.<span class="highlight">addItem</span>();             <span class="comment">// empty</span>
+
+<span class="comment">// Readonly: Add button disabled</span>
+<span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">readonly</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
         <!-- Dynamic Items -->
         <div class="section">
-            <h2>10. Dynamic Items via JavaScript</h2>
+            <h2>11. Dynamic Items via JavaScript</h2>
             <p>Add and update items programmatically using the <code>items</code> property.</p>
             <div class="controls">
                 <div class="control-group">
@@ -372,11 +403,12 @@ element.<span class="highlight">color</span> = <span class="string">'#e67e22'</s
                     color="#1abc9c">
                 </ck-primitive-array>
             </div>
-            <pre><code><span class="keyword">const</span> element = <span class="keyword">document</span>.querySelector(<span class="string">'ck-primitive-array'</span>);
-element.<span class="highlight">items</span> = [<span class="string">'Item 1'</span>, <span class="string">'Item 2'</span>, <span class="string">'Item 3'</span>];
+                <pre><code><span class="keyword">const</span> element = <span class="keyword">document</span>.querySelector(<span class="string">'ck-primitive-array'</span>);
+        element.<span class="highlight">items</span> = [<span class="string">'Item 1'</span>, <span class="string">'Item 2'</span>, <span class="string">'Item 3'</span>];
 
-<span class="comment">// Add a new item</span>
-element.<span class="highlight">items</span> = [...element.items, <span class="string">'New Item'</span>];</code></pre>
+        <span class="comment">// Add a new item</span>
+        <span class="keyword">const</span> values = element.items.map(item => item.value);
+        element.<span class="highlight">items</span> = [...values, <span class="string">'New Item'</span>];</code></pre>
         </div>
     </div>
 
@@ -407,6 +439,16 @@ element.<span class="highlight">items</span> = [...element.items, <span class="s
             const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', '#1abc9c'];
             const element = document.createElement('ck-primitive-array');
 
+        // Setup add demo change event listener
+        const addDemo = document.getElementById('addDemo');
+        const addDemoLog = document.getElementById('addDemoLog');
+        if (addDemo && addDemoLog) {
+            addDemo.addEventListener('change', (e) => {
+                const items = e.detail?.items || [];
+                addDemoLog.textContent = `change event: ${items.length} item(s)`;
+            });
+        }
+
         // Setup dynamic items
         const dynamicItems = document.getElementById('dynamicItems');
         const itemInput = document.getElementById('itemInput');
@@ -415,7 +457,8 @@ element.<span class="highlight">items</span> = [...element.items, <span class="s
         itemInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
                 const currentItems = dynamicItems.items || [];
-                dynamicItems.items = [...currentItems, e.target.value.trim()];
+                const values = currentItems.map(item => item.value);
+                dynamicItems.items = [...values, e.target.value.trim()];
                 e.target.value = '';
             }
         });

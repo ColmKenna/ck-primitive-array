@@ -13,6 +13,10 @@ export class CkPrimitiveArray extends HTMLElement {
   private listElement: HTMLDivElement | null = null;
   private placeholderElement: HTMLParagraphElement | null = null;
   private boundAddHandler: ((e: Event) => void) | null = null;
+  private itemsState: Array<{ id: string; value: string; deleted: boolean }> =
+    [];
+  private nextItemId = 0;
+  private lastItemsAttribute: string | null = null;
 
   constructor() {
     super();
@@ -54,7 +58,7 @@ export class CkPrimitiveArray extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['name', 'color', 'items'];
+    return ['name', 'color', 'items', 'readonly', 'disabled'];
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -79,17 +83,30 @@ export class CkPrimitiveArray extends HTMLElement {
     this.setAttribute('color', value);
   }
 
-  get items(): string[] {
-    const parsed = this.parseItems();
-    return parsed !== null ? parsed : [];
+  get items(): Array<{ id: string; value: string; deleted: boolean }> {
+    return this.itemsState.map(item => ({ ...item }));
   }
 
-  set items(value: string[]) {
-    this.setAttribute('items', JSON.stringify(value));
+  set items(
+    value: Array<
+      | string
+      | number
+      | boolean
+      | { value?: string; id?: string; deleted?: boolean }
+    >
+  ) {
+    const normalized = Array.isArray(value)
+      ? value.map(item => {
+          if (typeof item === 'object' && item !== null && 'value' in item) {
+            return (item as { value?: string }).value ?? '';
+          }
+          return item as string | number | boolean;
+        })
+      : [];
+    this.setAttribute('items', JSON.stringify(normalized));
   }
 
-  private parseItems(): string[] | null {
-    const itemsAttr = this.getAttribute('items');
+  private parseItemsAttribute(itemsAttr: string | null): string[] | null {
     if (!itemsAttr) return [];
 
     try {
@@ -110,6 +127,26 @@ export class CkPrimitiveArray extends HTMLElement {
       );
       return null; // Return null to signal error
     }
+  }
+
+  private syncItemsFromAttribute() {
+    const itemsAttr = this.getAttribute('items');
+    if (itemsAttr === this.lastItemsAttribute) return;
+
+    const parsed = this.parseItemsAttribute(itemsAttr);
+    if (parsed === null) return;
+
+    this.lastItemsAttribute = itemsAttr;
+    this.itemsState = parsed.map(value => ({
+      id: this.createItemId(),
+      value,
+      deleted: false,
+    }));
+  }
+
+  private createItemId() {
+    this.nextItemId += 1;
+    return `item-${this.nextItemId}`;
   }
 
   private render() {
@@ -181,46 +218,106 @@ export class CkPrimitiveArray extends HTMLElement {
       (this.messageElement.style as CSSStyleDeclaration).color = this.color;
     }
 
-    // Render items from attribute
-    if (this.listElement) {
-      const itemsToRender = this.parseItems();
-
-      // Only update items if parsing was successful (null means error)
-      if (itemsToRender !== null) {
-        // Clear existing items (but keep placeholder)
-        const existingItems = this.listElement.querySelectorAll(
-          '.ck-primitive-array__item'
-        );
-        existingItems.forEach(item => item.remove());
-
-        // Add items from attribute
-        itemsToRender.forEach(itemText => {
-          const item = document.createElement('div');
-          item.className = 'ck-primitive-array__item';
-          item.setAttribute('role', 'listitem');
-          item.textContent = itemText;
-          this.listElement!.appendChild(item);
-        });
-      }
+    // Update add button disabled state based on readonly/disabled attributes
+    if (this.addButton) {
+      const isReadonly = this.hasAttribute('readonly');
+      const isDisabled = this.hasAttribute('disabled');
+      this.addButton.disabled = isReadonly || isDisabled;
     }
 
-    // Ensure placeholder visibility
-    if (this.listElement && this.placeholderElement) {
-      const hasItems =
-        this.listElement.querySelectorAll('.ck-primitive-array__item').length >
-        0;
-      this.placeholderElement.style.display = hasItems ? 'none' : '';
+    // Render items from attribute
+    if (this.listElement) {
+      this.syncItemsFromAttribute();
+      this.renderItems();
     }
   }
 
-  private addItem() {
+  private createItemRow(itemState: {
+    id: string;
+    value: string;
+    deleted: boolean;
+  }): HTMLDivElement {
+    const itemRow = document.createElement('div');
+    itemRow.className = 'ck-primitive-array__item';
+    itemRow.setAttribute('role', 'listitem');
+    itemRow.setAttribute('data-id', itemState.id);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'ck-primitive-array__input';
+    input.value = itemState.value;
+    input.addEventListener('input', () => {
+      itemState.value = input.value;
+    });
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'ck-primitive-array__delete';
+    deleteButton.setAttribute('data-action', 'delete');
+    deleteButton.textContent = 'Delete';
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'ck-primitive-array__remove';
+    removeButton.setAttribute('data-action', 'remove');
+    removeButton.textContent = 'X';
+
+    itemRow.appendChild(input);
+    itemRow.appendChild(deleteButton);
+    itemRow.appendChild(removeButton);
+
+    return itemRow;
+  }
+
+  private renderItems() {
     if (!this.listElement) return;
-    const item = document.createElement('div');
-    item.className = 'ck-primitive-array__item';
-    item.setAttribute('role', 'listitem');
-    item.textContent = `Item ${this.listElement.querySelectorAll('.ck-primitive-array__item').length + 1}`;
-    this.listElement.appendChild(item);
-    if (this.placeholderElement) this.placeholderElement.style.display = 'none';
+
+    // Clear existing items (but keep placeholder)
+    const existingItems = this.listElement.querySelectorAll(
+      '.ck-primitive-array__item'
+    );
+    existingItems.forEach(item => item.remove());
+
+    this.itemsState.forEach(itemState => {
+      this.listElement!.appendChild(this.createItemRow(itemState));
+    });
+
+    this.updatePlaceholder();
+  }
+
+  private updatePlaceholder() {
+    if (this.placeholderElement) {
+      this.placeholderElement.style.display =
+        this.itemsState.length > 0 ? 'none' : '';
+    }
+  }
+
+  addItem(value?: string) {
+    if (!this.listElement) return;
+
+    const newItem = {
+      id: this.createItemId(),
+      value: value ?? '',
+      deleted: false,
+    };
+    this.itemsState.push(newItem);
+
+    // Append only the new row — no full re-render
+    const row = this.createItemRow(newItem);
+    this.listElement.appendChild(row);
+    this.updatePlaceholder();
+
+    // Focus the new input
+    const input = row.querySelector('input') as HTMLInputElement | null;
+    input?.focus();
+
+    // Dispatch change event
+    this.dispatchEvent(
+      new CustomEvent('change', {
+        bubbles: true,
+        detail: { items: this.items },
+      })
+    );
   }
 }
 

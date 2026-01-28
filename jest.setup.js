@@ -12,5 +12,6 @@ Object.defineProperty(window, 'customElements', {
 
 // Setup for any additional globals your web components might need
 global.HTMLElement = window.HTMLElement;
+global.HTMLInputElement = window.HTMLInputElement || class extends window.HTMLElement {};
 global.HTMLButtonElement = window.HTMLButtonElement || class extends window.HTMLElement {};
 global.customElements = window.customElements;

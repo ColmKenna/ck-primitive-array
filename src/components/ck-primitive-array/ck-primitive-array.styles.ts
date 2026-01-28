@@ -32,6 +32,49 @@ export const ckPrimitiveArrayCSS = `
   margin: 0.5rem 0 0 0;
   opacity: var(--ck-primitive-array-subtitle-opacity);
 }
+
+.ck-primitive-array__controls {
+  margin-top: 1rem;
+}
+
+.ck-primitive-array__list {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ck-primitive-array__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ck-primitive-array__input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+.ck-primitive-array__delete,
+.ck-primitive-array__remove {
+  border: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.ck-primitive-array__delete {
+  background: #f0f2f5;
+  color: #24292f;
+}
+
+.ck-primitive-array__remove {
+  background: #d73a49;
+  color: #fff;
+}
 `;
 
 // Try to create a constructable stylesheet where supported. Fall back to null.

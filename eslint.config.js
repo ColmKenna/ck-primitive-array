@@ -21,6 +21,7 @@ export default [
         document: 'readonly',
         HTMLElement: 'readonly',
         HTMLButtonElement: 'readonly',
+        HTMLInputElement: 'readonly',
         customElements: 'readonly',
         jest: 'readonly',
         describe: 'readonly',

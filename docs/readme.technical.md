@@ -109,7 +109,7 @@ Invoked when:
 
 ```typescript
 static get observedAttributes() {
-  return ['name', 'color'];
+  return ['name', 'color', 'items', 'readonly', 'disabled'];
 }
 
 attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -162,12 +162,23 @@ private render() {
 ```html
 <div class="ck-primitive-array">
   <h1 class="ck-primitive-array__message">Hello, ${this.name}!</h1>
+  <div class="ck-primitive-array__controls">
+    <button type="button" class="add-item">Add</button>
+  </div>
+  <div class="ck-primitive-array__list" role="list" aria-label="items">
+    <p class="ck-primitive-array__placeholder">No items</p>
+    <div class="ck-primitive-array__item" role="listitem">
+      <input type="text" value="${item.value}" />
+      <button type="button" data-action="delete">Delete</button>
+      <button type="button" data-action="remove">X</button>
+    </div>
+  </div>
   <p class="ck-primitive-array__subtitle">Welcome to our Web Component Library</p>
 </div>
 ```
 
 **Naming Convention**: BEM-style class names  
-**Dynamic Content**: Only `name` is dynamic; subtitle is static
+**Dynamic Content**: `name` is dynamic; items render as editable rows based on internal item state
 
 ## TypeScript Configuration
 
@@ -275,6 +286,19 @@ afterEach(() => {
 ### Polyfills
 Not currently included. For older browser support, add:
 - `@webcomponents/webcomponentsjs`
+
+### Add Button & Change Event
+
+The `addItem(value?: string)` method is **public** and:
+1. Accepts an optional `value` parameter (defaults to `''` when omitted)
+2. Pushes a new `{ id, value, deleted: false }` item to internal state
+3. Appends only the new row to the DOM (no full re-render)
+4. Focuses the newly created input element
+5. Dispatches a `change` CustomEvent with `detail.items` containing the updated items array
+
+The Add button's click handler calls `addItem()` with no argument.
+
+The Add button is disabled when the `readonly` or `disabled` boolean attribute is present on the host element. This state is updated on every render via `this.addButton.disabled`.
 
 ## Future Enhancements
 
