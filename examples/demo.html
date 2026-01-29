@@ -425,6 +425,73 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
 <span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">readonly</span> <span class="highlight">items</span>=<span class="string">'["locked"]'</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
         </div>
 
+        <!-- Ctrl/Cmd+Enter Form Submission -->
+        <div class="section">
+            <h2>11.5. Keyboard Shortcuts - Ctrl/Cmd+Enter Submit</h2>
+            <p>Press <strong>Ctrl+Enter</strong> (Windows/Linux) or <strong>Cmd+Enter</strong> (Mac) while focused on any item input to submit the form. The focused value is saved before submission, and it works even when <code>readonly</code> is set.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Try It: Ctrl/Cmd+Enter to Submit</h3>
+                    <form id="ctrlEnterForm" style="display: block;">
+                        <ck-primitive-array
+                            id="ctrlEnterDemo"
+                            name="items"
+                            items='["Type here and press Ctrl+Enter"]'
+                            color="#e67e22">
+                        </ck-primitive-array>
+                        <button type="submit" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Submit Form
+                        </button>
+                    </form>
+                    <div id="ctrlEnterOutput" style="margin-top: 0.5rem; padding: 0.5rem; background: #fff3cd; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                        <div style="color: #666;">Focus an input and press Ctrl+Enter (or Cmd+Enter on Mac)...</div>
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Focus an input, press Ctrl+Enter → Value saves and form submits
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>Not in a Form (No Effect)</h3>
+                    <ck-primitive-array
+                        name="standalone"
+                        items='["Press Ctrl+Enter here (no effect)"]'
+                        color="#95a5a6">
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #999;">
+                        ⚠️ Ctrl/Cmd+Enter only works when component is inside a form element
+                    </p>
+                </div>
+            </div>
+            <pre><code><span class="comment">// User presses Ctrl+Enter (or Cmd+Enter on Mac) in item input:</span>
+<span class="comment">// 1. Form submits immediately (if component is in a form)</span>
+<span class="comment">// 2. Focused input value is saved before submit</span>
+<span class="comment">// 3. Regular Enter still adds new items</span>
+<span class="comment">// 4. Works cross-platform (Ctrl on Windows/Linux, Cmd on Mac)</span>
+
+<span class="keyword">&lt;form</span> <span class="highlight">id</span>=<span class="string">"myForm"</span><span class="keyword">&gt;</span>
+  <span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">name</span>=<span class="string">"tags"</span> <span class="highlight">items</span>=<span class="string">'["task1","task2"]'</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span>
+<span class="keyword">&lt;/form&gt;</span></code></pre>
+        </div>
+
+        <script>
+            // Ctrl/Cmd+Enter demo event handler
+            const ctrlEnterForm = document.getElementById('ctrlEnterForm');
+            const ctrlEnterOutput = document.getElementById('ctrlEnterOutput');
+
+            if (ctrlEnterForm && ctrlEnterOutput) {
+                ctrlEnterForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(ctrlEnterForm);
+                    const items = formData.getAll('items[]');
+                    ctrlEnterOutput.innerHTML = `
+                        <div style="color: #27ae60; font-weight: bold;">Form Submitted via Ctrl/Cmd+Enter!</div>
+                        <div>items[] = ${JSON.stringify(items)}</div>
+                        <div style="margin-top: 0.5rem; color: #666; font-size: 0.75rem;">Try focusing an input and pressing Ctrl+Enter again</div>
+                    `;
+                });
+            }
+        </script>
+
         <!-- Inline Edit -->
         <div class="section">
             <h2>12. Inline Edit Features</h2>
@@ -603,9 +670,99 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
             });
         </script>
 
+        <!-- Form Submission & Validation -->
+        <div class="section">
+            <h2>13. Form Submission & Validation</h2>
+            <p>The component participates in standard HTML forms via hidden inputs. Use <code>checkValidity()</code> to validate before submission.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="demo-item">
+                    <h3>Form Submission</h3>
+                    <form id="formSubmitDemo">
+                        <ck-primitive-array
+                            id="formSubmitArray"
+                            name="fruits"
+                            deleted-name="removed-fruits"
+                            items='["apple","banana","cherry"]'>
+                        </ck-primitive-array>
+                        <button type="submit" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Submit Form
+                        </button>
+                    </form>
+                    <div id="formSubmitOutput" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                        <div style="color: #666;">Submit to see FormData...</div>
+                    </div>
+                </div>
+                <div class="demo-item">
+                    <h3>Validation (checkValidity)</h3>
+                    <ck-primitive-array
+                        id="validationCheckDemo"
+                        name="tasks"
+                        items='["Write tests",""]'>
+                    </ck-primitive-array>
+                    <button type="button" id="checkValidityBtn" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: #e67e22; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        Check Validity
+                    </button>
+                    <div id="validityOutput" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                        <div style="color: #666;">Click to check validity...</div>
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        Fill in the empty item to make it valid
+                    </p>
+                </div>
+            </div>
+
+            <pre><code><span class="comment">// Check validity before submission</span>
+<span class="keyword">const</span> el = <span class="keyword">document</span>.querySelector(<span class="string">'ck-primitive-array'</span>);
+<span class="keyword">if</span> (el.<span class="highlight">checkValidity</span>()) {
+  form.submit();
+} <span class="keyword">else</span> {
+  alert(<span class="string">'Please fill in all items'</span>);
+}
+
+<span class="comment">// Collect FormData</span>
+<span class="keyword">const</span> formData = <span class="keyword">new</span> FormData(form);
+<span class="keyword">const</span> items = formData.getAll(<span class="string">'fruits[]'</span>);
+<span class="keyword">const</span> removed = formData.getAll(<span class="string">'removed-fruits[]'</span>);</code></pre>
+        </div>
+
+        <script>
+            // Form submission demo
+            const formSubmitDemo = document.getElementById('formSubmitDemo');
+            const formSubmitOutput = document.getElementById('formSubmitOutput');
+
+            if (formSubmitDemo && formSubmitOutput) {
+                formSubmitDemo.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(formSubmitDemo);
+                    const active = formData.getAll('fruits[]');
+                    const removed = formData.getAll('removed-fruits[]');
+                    formSubmitOutput.innerHTML = `
+                        <div style="color: #27ae60; font-weight: bold;">Form Submitted!</div>
+                        <div>fruits[] = ${JSON.stringify(active)}</div>
+                        <div>removed-fruits[] = ${JSON.stringify(removed)}</div>
+                    `;
+                });
+            }
+
+            // Validation demo
+            const checkValidityBtn = document.getElementById('checkValidityBtn');
+            const validationCheckDemo = document.getElementById('validationCheckDemo');
+            const validityOutput = document.getElementById('validityOutput');
+
+            if (checkValidityBtn && validationCheckDemo && validityOutput) {
+                checkValidityBtn.addEventListener('click', () => {
+                    const isValid = validationCheckDemo.checkValidity();
+                    validityOutput.innerHTML = isValid
+                        ? '<div style="color: #27ae60; font-weight: bold;">Valid! All items have values.</div>'
+                        : '<div style="color: #e74c3c; font-weight: bold;">Invalid! Some items are empty.</div>';
+                });
+            }
+        </script>
+
         <!-- Dynamic Items -->
         <div class="section">
-            <h2>13. Dynamic Items via JavaScript</h2>
+            <h2>14. Dynamic Items via JavaScript</h2>
             <p>Add and update items programmatically using the <code>items</code> property.</p>
             <div class="controls">
                 <div class="control-group">
@@ -631,7 +788,7 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
 
         <!-- Input Synchronization -->
         <div class="section">
-            <h2>14. Input Synchronization (Form Integration)</h2>
+            <h2>15. Input Synchronization (Form Integration)</h2>
             <p>Hidden inputs automatically synchronize with component state for form submission.</p>
             <p><strong>Try:</strong> Add items, edit values, soft-delete items, then check the form data below.</p>
 

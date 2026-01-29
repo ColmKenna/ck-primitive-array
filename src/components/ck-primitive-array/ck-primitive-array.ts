@@ -58,7 +58,7 @@ export class CkPrimitiveArray extends HTMLElement {
     this.addButton = null;
     this.listElement = null;
     this.placeholderElement = null;
-    
+
     // Cleanup light DOM fields container
     if (this.fieldsContainer && this.fieldsContainer.parentNode) {
       this.fieldsContainer.parentNode.removeChild(this.fieldsContainer);
@@ -167,7 +167,7 @@ export class CkPrimitiveArray extends HTMLElement {
 
     for (const itemState of this.itemsState) {
       const inputName = this.getHiddenInputName(itemState);
-      
+
       if (inputName) {
         let input = this.hiddenInputsMap.get(itemState.id);
         if (!input) {
@@ -212,6 +212,43 @@ export class CkPrimitiveArray extends HTMLElement {
       value,
       deleted: false,
     }));
+  }
+
+  private commitInputValue(
+    itemState: { id: string; value: string; deleted: boolean },
+    input: HTMLInputElement,
+    itemRow: HTMLDivElement,
+    emitChange: boolean
+  ) {
+    if (itemState.value === input.value) {
+      return;
+    }
+
+    itemState.value = input.value;
+
+    // Update aria-label
+    input.setAttribute('aria-label', `Item: ${input.value}`);
+
+    // Update hidden input in light DOM
+    this.syncHiddenInputs();
+
+    // Validation: mark as invalid if empty
+    if (input.value === '') {
+      input.setAttribute('aria-invalid', 'true');
+      itemRow.classList.add('has-error');
+    } else {
+      input.removeAttribute('aria-invalid');
+      itemRow.classList.remove('has-error');
+    }
+
+    if (emitChange) {
+      this.dispatchEvent(
+        new CustomEvent('change', {
+          bubbles: true,
+          detail: { items: this.items },
+        })
+      );
+    }
   }
 
   private createItemId() {
@@ -336,32 +373,21 @@ export class CkPrimitiveArray extends HTMLElement {
     }
 
     input.addEventListener('input', () => {
-      itemState.value = input.value;
-
-      // Update aria-label
-      input.setAttribute('aria-label', `Item: ${input.value}`);
-
-      // Update hidden input in light DOM
-      this.syncHiddenInputs();
-
-      // Validation: mark as invalid if empty
-      if (input.value === '') {
-        input.setAttribute('aria-invalid', 'true');
-        itemRow.classList.add('has-error');
-      } else {
-        input.removeAttribute('aria-invalid');
-        itemRow.classList.remove('has-error');
-      }
-
-      this.dispatchEvent(
-        new CustomEvent('change', {
-          bubbles: true,
-          detail: { items: this.items },
-        })
-      );
+      this.commitInputValue(itemState, input, itemRow, true);
     });
     input.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
+        // Ctrl+Enter or Cmd+Enter submits form
+        if (e.ctrlKey || e.metaKey) {
+          const form = this.closest('form');
+          if (form) {
+            this.commitInputValue(itemState, input, itemRow, true);
+            form.requestSubmit();
+          }
+          return;
+        }
+
+        // Regular Enter adds item
         if (!this.hasAttribute('readonly')) {
           this.addItem();
           this.addButton?.focus();
@@ -373,36 +399,46 @@ export class CkPrimitiveArray extends HTMLElement {
     deleteButton.type = 'button';
     deleteButton.className = 'ck-primitive-array__delete';
     deleteButton.setAttribute('data-action', 'delete');
-    deleteButton.setAttribute('aria-pressed', itemState.deleted ? 'true' : 'false');
+    deleteButton.setAttribute(
+      'aria-pressed',
+      itemState.deleted ? 'true' : 'false'
+    );
     deleteButton.textContent = itemState.deleted ? 'Undo' : 'Delete';
 
     deleteButton.addEventListener('click', () => {
       itemState.deleted = !itemState.deleted;
-      
+
       // Update button text and aria-pressed
       deleteButton.textContent = itemState.deleted ? 'Undo' : 'Delete';
-      deleteButton.setAttribute('aria-pressed', itemState.deleted ? 'true' : 'false');
-      
+      deleteButton.setAttribute(
+        'aria-pressed',
+        itemState.deleted ? 'true' : 'false'
+      );
+
       // Update part attribute on row
       if (itemState.deleted) {
         itemRow.setAttribute('part', 'item deleted');
       } else {
         itemRow.setAttribute('part', 'item');
       }
-      
+
       // Update input disabled state
       input.disabled = itemState.deleted;
-      
+
       // Sync hidden inputs in light DOM
       this.syncHiddenInputs();
-      
+
       // Focus the button after toggle
       deleteButton.focus();
-      
+
       // Dispatch change event with separate active/deleted arrays
       const allItems = this.items;
-      const activeItems = allItems.filter(item => !item.deleted).map(item => item.value);
-      const deletedItems = allItems.filter(item => item.deleted).map(item => item.value);
+      const activeItems = allItems
+        .filter(item => !item.deleted)
+        .map(item => item.value);
+      const deletedItems = allItems
+        .filter(item => item.deleted)
+        .map(item => item.value);
 
       this.dispatchEvent(
         new CustomEvent('change', {
@@ -450,8 +486,12 @@ export class CkPrimitiveArray extends HTMLElement {
 
       // Dispatch change event
       const allItems = this.items;
-      const activeItems = allItems.filter(item => !item.deleted).map(item => item.value);
-      const deletedItems = allItems.filter(item => item.deleted).map(item => item.value);
+      const activeItems = allItems
+        .filter(item => !item.deleted)
+        .map(item => item.value);
+      const deletedItems = allItems
+        .filter(item => item.deleted)
+        .map(item => item.value);
 
       this.dispatchEvent(
         new CustomEvent('change', {
@@ -499,10 +539,16 @@ export class CkPrimitiveArray extends HTMLElement {
     if (!this.listElement) return;
 
     const inputs = this.listElement.querySelectorAll('input[type="text"]');
-    inputs.forEach((input, index) => {
+    inputs.forEach(input => {
       const itemValue = (input as HTMLInputElement).value;
       input.setAttribute('aria-label', `Item: ${itemValue}`);
     });
+  }
+
+  checkValidity(): boolean {
+    return this.itemsState.every(
+      item => item.deleted || item.value.trim() !== ''
+    );
   }
 
   addItem(value?: string) {

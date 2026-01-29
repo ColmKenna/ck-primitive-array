@@ -14,4 +14,5 @@ Object.defineProperty(window, 'customElements', {
 global.HTMLElement = window.HTMLElement;
 global.HTMLInputElement = window.HTMLInputElement || class extends window.HTMLElement {};
 global.HTMLButtonElement = window.HTMLButtonElement || class extends window.HTMLElement {};
+global.FormData = window.FormData;
 global.customElements = window.customElements;

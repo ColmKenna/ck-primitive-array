@@ -161,6 +161,28 @@ User types in input → Presses Enter → New item added → Focus moves to Add 
 -->
 ```
 
+#### Ctrl/Cmd+Enter Form Submission
+
+When focused on an item input field, pressing **Ctrl+Enter** (Windows/Linux) or **Cmd+Enter** (macOS) submits the closest form:
+
+```
+User edits input → Presses Ctrl/Cmd+Enter → Current value saved → Form submits
+```
+
+**Behavior**:
+- ✅ Submits the nearest `<form>` using `requestSubmit()`
+- ✅ Saves the focused input value before submission
+- ✅ Works even when `readonly` is present
+- ❌ Does nothing when the component is not inside a form
+
+**Example**:
+```html
+<form>
+  <ck-primitive-array name="tags" items='["alpha"]'></ck-primitive-array>
+  <button type="submit">Submit</button>
+</form>
+```
+
 ### Inline Editing
 
 Each item in the list can be edited directly by typing in its input field.

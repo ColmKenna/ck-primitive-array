@@ -309,6 +309,15 @@ Each item input has a `keydown` event listener attached in `createItemRow()`:
 ```typescript
 input.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.key === 'Enter') {
+    if (e.ctrlKey || e.metaKey) {
+      const form = this.closest('form');
+      if (form) {
+        this.commitInputValue(itemState, input, itemRow, true);
+        form.requestSubmit();
+      }
+      return;
+    }
+
     if (!this.hasAttribute('readonly')) {
       this.addItem();
       this.addButton?.focus();
@@ -320,9 +329,11 @@ input.addEventListener('keydown', (e: KeyboardEvent) => {
 **Implementation Details**:
 1. **Event Type**: `keydown` (fires before default browser behavior)
 2. **Key Detection**: Uses `e.key === 'Enter'` (modern KeyboardEvent API)
-3. **Readonly Check**: Respects `readonly` attribute by checking `hasAttribute()`
-4. **Action**: Calls existing `addItem()` method (reuses logic, dispatches change event)
-5. **Focus Management**: Moves focus to Add button using `focus()` method
+3. **Shortcut Priority**: Ctrl/Cmd+Enter submits the nearest form before normal Enter behavior
+4. **Value Commit**: Uses `commitInputValue()` to sync state and hidden inputs before submit
+5. **Readonly Check**: Respects `readonly` for normal Enter only (submission still allowed)
+6. **Action**: Calls existing `addItem()` method (reuses logic, dispatches change event)
+7. **Focus Management**: Moves focus to Add button using `focus()` method
 
 **Lifecycle**:
 - Listener attached when input is created in `createItemRow()`
@@ -331,8 +342,9 @@ input.addEventListener('keydown', (e: KeyboardEvent) => {
 
 **Design Decisions**:
 - ✅ Inline handler (simple, no need for bound method storage)
-- ✅ Leverages existing `addItem()` logic (DRY principle)
-- ✅ Respects readonly state (consistent with button behavior)
+- ✅ Ctrl/Cmd+Enter uses standard `requestSubmit()` for validation
+- ✅ Commits focused input value before submission
+- ✅ Respects readonly for add while still allowing submission
 - ✅ Provides keyboard accessibility (complements mouse interaction)
 
 ## Inline Edit Implementation (Phase 2.1)

@@ -2019,6 +2019,125 @@ describe('CkPrimitiveArray Component', () => {
     });
   });
 
+  describe('Form Submission', () => {
+    test('should include active items in form submission', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      el.setAttribute('items', '["a","b"]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      const formData = new window.FormData(form);
+      const items = formData.getAll('items[]');
+      expect(items).toEqual(['a', 'b']);
+
+      document.body.removeChild(form);
+    });
+
+    test('should include deleted items when deleted-name is set', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      el.setAttribute('deleted-name', 'removed');
+      el.setAttribute('items', '["a","b"]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      // Soft delete first item
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const formData = new window.FormData(form);
+      const activeItems = formData.getAll('items[]');
+      const deletedItems = formData.getAll('removed[]');
+      expect(activeItems).toEqual(['b']);
+      expect(deletedItems).toEqual(['a']);
+
+      document.body.removeChild(form);
+    });
+
+    test('should exclude deleted items without deleted-name attribute', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      el.setAttribute('items', '["a","b"]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      // Soft delete first item
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const formData = new window.FormData(form);
+      const activeItems = formData.getAll('items[]');
+      expect(activeItems).toEqual(['b']);
+      // No deleted items should appear in FormData at all
+      const allKeys = Array.from(formData.keys());
+      expect(allKeys).toEqual(['items[]']);
+
+      document.body.removeChild(form);
+    });
+
+    test('should have current values at submission time', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      el.setAttribute('items', '["original"]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      // Edit the input
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'edited';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const formData = new window.FormData(form);
+      const items = formData.getAll('items[]');
+      expect(items).toEqual(['edited']);
+
+      document.body.removeChild(form);
+    });
+
+    test('should submit no values when list is empty', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      const formData = new window.FormData(form);
+      const items = formData.getAll('items[]');
+      expect(items).toEqual([]);
+
+      document.body.removeChild(form);
+    });
+
+    test('should prevent form submission when invalid item exists', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      el.setAttribute('items', '["valid",""]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      // checkValidity should exist and return false for invalid items
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(typeof (el as any).checkValidity).toBe('function');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const isValid = (el as any).checkValidity();
+      expect(isValid).toBe(false);
+
+      document.body.removeChild(form);
+    });
+  });
+
   describe('Input Synchronization', () => {
     test('should create hidden inputs when items attribute and name attribute are set initially', () => {
       const el = new CkPrimitiveArray();
@@ -2200,6 +2319,161 @@ describe('CkPrimitiveArray Component', () => {
       expect((inputs[2] as HTMLInputElement).name).toBe('tags[]');
 
       document.body.removeChild(el);
+    });
+  });
+
+  describe('Keyboard Shortcuts - Ctrl/Cmd+Enter Form Submission', () => {
+    test('Ctrl+Enter submits form (Windows/Linux)', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      let submitCalled = false;
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        submitCalled = true;
+      });
+
+      // Focus the input
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.focus();
+
+      // Simulate Ctrl+Enter
+      const ctrlEnterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        ctrlKey: true,
+        bubbles: true,
+      });
+      input.dispatchEvent(ctrlEnterEvent);
+
+      expect(submitCalled).toBe(true);
+
+      document.body.removeChild(form);
+    });
+
+    test('Cmd+Enter submits form (Mac)', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      let submitCalled = false;
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        submitCalled = true;
+      });
+
+      // Focus the input
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.focus();
+
+      // Simulate Cmd+Enter
+      const cmdEnterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        metaKey: true,
+        bubbles: true,
+      });
+      input.dispatchEvent(cmdEnterEvent);
+
+      expect(submitCalled).toBe(true);
+
+      document.body.removeChild(form);
+    });
+
+    test('Ctrl/Cmd+Enter does nothing when not in a form', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      // Focus the input
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.focus();
+
+      // Simulate Ctrl+Enter (should not throw error)
+      const ctrlEnterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        ctrlKey: true,
+        bubbles: true,
+      });
+
+      expect(() => {
+        input.dispatchEvent(ctrlEnterEvent);
+      }).not.toThrow();
+
+      document.body.removeChild(el);
+    });
+
+    test('Current input saved before submit', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["old value"]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      let submittedValues: string[] = [];
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const data = new window.FormData(form);
+        submittedValues = data.getAll('tags[]') as string[];
+      });
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      input.value = 'new value';
+
+      const ctrlEnterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        ctrlKey: true,
+        bubbles: true,
+      });
+      input.dispatchEvent(ctrlEnterEvent);
+
+      expect(submittedValues).toEqual(['new value']);
+
+      document.body.removeChild(form);
+    });
+
+    test('Ctrl+Enter submits form when readonly', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('readonly', '');
+      el.setAttribute('items', '["test item"]');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      let submitCalled = false;
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        submitCalled = true;
+      });
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.focus();
+
+      const ctrlEnterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        ctrlKey: true,
+        bubbles: true,
+      });
+      input.dispatchEvent(ctrlEnterEvent);
+
+      expect(submitCalled).toBe(true);
+
+      document.body.removeChild(form);
     });
   });
 });

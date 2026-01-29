@@ -101,6 +101,35 @@ When the user presses **Enter** while focused on an item input:
 // → Original input keeps its typed value
 ```
 
+#### Ctrl/Cmd+Enter Form Submission (P1)
+
+When the user presses **Ctrl+Enter** (Windows/Linux) or **Cmd+Enter** (Mac) while focused on an item input:
+
+1. **Form Submission**: If the component is inside a `<form>`, the form is submitted
+2. **No Form Behavior**: If not in a form, the keyboard shortcut does nothing (no error)
+3. **Cross-Platform**: Works on both Windows/Linux (Ctrl) and Mac (Cmd)
+4. **Priority**: Takes precedence over regular Enter key behavior
+5. **Value Commit**: The focused input value is saved to component state before submission
+6. **Readonly Compatibility**: Submission still occurs even when `readonly` is present
+
+**Example Usage**:
+```html
+<form id="myForm">
+  <ck-primitive-array name="tags" items='["task1","task2"]'></ck-primitive-array>
+  <button type="submit">Submit</button>
+</form>
+
+<script>
+  // User types in input, then presses Ctrl+Enter or Cmd+Enter
+  // → Form submits immediately
+  document.getElementById('myForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    console.log('Submitted:', formData.getAll('tags[]'));
+  });
+</script>
+```
+
 ### Inline Edit (Phase 2.1)
 
 Each item's text input supports inline editing with the following features:
@@ -795,6 +824,54 @@ document.getElementById('myForm').addEventListener('submit', (e) => {
 
 ---
 
+### Form Submission (Phase 3.5)
+
+The component supports form submission validation via the `checkValidity()` method. When the component is placed inside a `<form>`, the hidden inputs participate in standard `FormData` collection.
+
+#### `checkValidity(): boolean`
+
+Returns `true` if all active (non-deleted) items have non-empty values. Returns `false` if any active item has an empty or whitespace-only value.
+
+```javascript
+const el = document.querySelector('ck-primitive-array');
+
+// Check if all items are valid before submitting
+if (el.checkValidity()) {
+  form.submit();
+} else {
+  alert('Please fill in all items');
+}
+```
+
+**Validation Rules**:
+- Active items with empty/whitespace values → invalid (`false`)
+- Deleted items are excluded from validation (always valid)
+- Empty list (no items) → valid (`true`)
+
+#### FormData Collection
+
+When inside a `<form>`, the component's hidden inputs are automatically collected by `FormData`:
+
+```javascript
+const form = document.querySelector('form');
+const formData = new FormData(form);
+
+// Active items
+const items = formData.getAll('items[]');    // ['a', 'b', 'c']
+
+// Deleted items (only if deleted-name attribute set)
+const removed = formData.getAll('removed[]'); // ['d']
+```
+
+**Behavior**:
+- Active items included when `name` attribute is set
+- Deleted items included only when `deleted-name` attribute is set
+- Deleted items excluded from FormData when no `deleted-name` attribute
+- Edited values are always current at submission time
+- Empty list produces no FormData entries
+
+---
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -968,7 +1045,14 @@ element.setAttribute('color', 'blue');
 82. ✅ Undo transitions input back to name (3.4.6)
 83. ✅ Items attribute re-parse refreshes hidden inputs (3.4.7)
 
-**Total**: 107 tests passing
+84. ✅ Form includes active items (3.5.1)
+85. ✅ Form includes deleted items with deleted-name (3.5.2)
+86. ✅ Form excludes deleted without deleted-name (3.5.3)
+87. ✅ Values current at submission (3.5.4)
+88. ✅ Empty list submits no values (3.5.5)
+89. ✅ Validation prevents submission (3.5.6)
+
+**Total**: 116 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list
