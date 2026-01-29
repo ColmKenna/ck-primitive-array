@@ -100,6 +100,95 @@ When the user presses **Enter** while focused on an item input:
 // → Original input keeps its typed value
 ```
 
+### Inline Edit (Phase 2.1)
+
+Each item's text input supports inline editing with the following features:
+
+#### State Updates
+- **Real-time**: State updates on every keystroke (input event)
+- **Identity Preservation**: Item `id` remains stable across edits
+- **Reactivity**: Changes trigger `change` CustomEvent with updated `items` array
+
+#### Change Events
+Every input keystroke dispatches a `change` CustomEvent:
+```javascript
+el.addEventListener('change', (e) => {
+  console.log('Items updated:', e.detail.items);
+});
+```
+
+**Event Details**:
+- **Type**: `CustomEvent`
+- **Bubbles**: `true`
+- **Detail**: `{ items: Array<{ id, value, deleted }> }`
+- **Frequency**: Dispatched on every keystroke
+
+#### Form Integration (Hidden Inputs)
+
+When the `name` attribute is set, each item creates a hidden input for form submission:
+
+```html
+<ck-primitive-array name="tags" items='["a","b"]'></ck-primitive-array>
+
+<!-- Renders hidden inputs: -->
+<input type="hidden" name="tags[]" value="a" />
+<input type="hidden" name="tags[]" value="b" />
+```
+
+**Behavior**:
+- Hidden input created only if `name` attribute present
+- Hidden input name: `{name}[]` (array notation for server-side)
+- Hidden input value updates in sync with text input
+- Enables standard HTML form submission
+
+#### Accessibility (ARIA)
+
+Each input has a dynamic ARIA label:
+```html
+<input type="text" aria-label="Item: apple" value="apple" />
+```
+
+**ARIA Updates**:
+- Initial label: `"Item: {value}"`
+- Updates on every keystroke to reflect current value
+- Provides context for screen readers
+
+#### Soft-Delete Support
+
+Items with `deleted: true` have disabled inputs:
+```javascript
+itemState.deleted = true; // Input becomes disabled
+```
+
+**Behavior**:
+- `input.disabled = true` when `itemState.deleted === true`
+- Prevents editing of soft-deleted items
+- Visual indicator (grayed out, browser-default disabled styling)
+
+#### Validation
+
+Empty values trigger validation error indicators:
+
+**Visual Indicators**:
+- `aria-invalid="true"` attribute on input
+- `.has-error` CSS class on item row
+
+**Validation Logic**:
+```javascript
+if (input.value === '') {
+  input.setAttribute('aria-invalid', 'true');
+  itemRow.classList.add('has-error');
+} else {
+  input.removeAttribute('aria-invalid');
+  itemRow.classList.remove('has-error');
+}
+```
+
+**Use Cases**:
+- Form validation styling
+- Accessibility announcements
+- Custom error messages via CSS
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -223,7 +312,16 @@ element.setAttribute('color', 'blue');
 37. ✅ Enter is no-op when readonly (1.6.4)
 38. ✅ Change event dispatched on Enter add (1.6.5)
 
-**Total**: 45 tests passing
+39. ✅ Input value change updates state (2.1.1)
+40. ✅ Change event on edit (2.1.2)
+41. ✅ Edit triggers on every keystroke (2.1.3)
+42. ✅ Edit updates hidden inputs (2.1.4)
+43. ✅ Cannot edit soft-deleted item (2.1.5)
+44. ✅ Edit preserves item identity (2.1.6)
+45. ✅ Edit updates aria-label (2.1.7)
+46. ✅ Empty edit triggers validation (2.1.8)
+
+**Total**: 53 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

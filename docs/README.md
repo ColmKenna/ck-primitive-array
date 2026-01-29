@@ -161,6 +161,69 @@ User types in input → Presses Enter → New item added → Focus moves to Add 
 -->
 ```
 
+### Inline Editing
+
+Each item in the list can be edited directly by typing in its input field.
+
+#### Real-Time Updates
+
+Changes update immediately on every keystroke:
+```javascript
+const el = document.querySelector('ck-primitive-array');
+
+// Listen for changes
+el.addEventListener('change', (e) => {
+  console.log('Items updated:', e.detail.items);
+  // Fires on EVERY keystroke
+});
+```
+
+#### Form Integration
+
+Set the `name` attribute to enable form submission:
+```html
+<form>
+  <ck-primitive-array name="tags" items='["react","vue"]'></ck-primitive-array>
+  <button type="submit">Submit</button>
+</form>
+```
+
+**Form Data Submitted**:
+```
+tags[]=react
+tags[]=vue
+```
+
+Hidden inputs are automatically created and synchronized with visible inputs, enabling standard HTML form submission.
+
+#### Validation
+
+Empty values are automatically flagged:
+```css
+/* Style validation errors */
+.ck-primitive-array__item.has-error input {
+  border-color: red;
+}
+```
+
+**Behavior**:
+- Empty inputs get `aria-invalid="true"` attribute
+- Parent `.ck-primitive-array__item` gets `.has-error` class
+- Screen readers announce invalid state
+
+#### Accessibility
+
+Each input has a descriptive ARIA label that updates with the value:
+```html
+<!-- User types "apple" -->
+<input type="text" aria-label="Item: apple" value="apple" />
+
+<!-- User changes to "orange" -->
+<input type="text" aria-label="Item: orange" value="orange" />
+```
+
+This provides context for screen reader users navigating between items.
+
 ### JavaScript API
 
 You can also manipulate the component programmatically:

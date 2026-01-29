@@ -425,9 +425,139 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
 <span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">readonly</span> <span class="highlight">items</span>=<span class="string">'["locked"]'</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
         </div>
 
+        <!-- Inline Edit -->
+        <div class="section">
+            <h2>12. Inline Edit Features</h2>
+            <p>Edit items directly with real-time updates, form integration, accessibility, and validation.</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div class="demo-item">
+                    <h3>Change Events on Every Keystroke</h3>
+                    <ck-primitive-array
+                        id="editDemo"
+                        name="Edit Demo"
+                        items='["Type here"]'
+                        color="#3498db">
+                    </ck-primitive-array>
+                    <div id="editEventLog" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 0.8rem; max-height: 100px; overflow-y: auto;">
+                        <div style="color: #666;">Event log (last 5 changes)...</div>
+                    </div>
+                </div>
+                <div class="demo-item">
+                    <h3>Form Integration (Hidden Inputs)</h3>
+                    <form id="demoForm" style="display: inline-block;">
+                        <ck-primitive-array
+                            name="tags"
+                            items='["react","vue","angular"]'
+                            color="#2ecc71">
+                        </ck-primitive-array>
+                        <button type="submit" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Submit Form
+                        </button>
+                    </form>
+                    <div id="formData" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                        <div style="color: #666;">Form data will appear here...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div class="demo-item">
+                    <h3>Validation (Empty Values)</h3>
+                    <style>
+                        .ck-primitive-array__item.has-error input {
+                            border: 2px solid #e74c3c;
+                            background: #fee;
+                        }
+                        .ck-primitive-array__item.has-error input:focus {
+                            outline-color: #e74c3c;
+                        }
+                    </style>
+                    <ck-primitive-array
+                        id="validationDemo"
+                        name="Validation"
+                        items='["Clear this text to see error"]'
+                        color="#e74c3c">
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Clear the input to trigger validation error (red border)
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>ARIA Labels (Accessibility)</h3>
+                    <ck-primitive-array
+                        id="ariaDemo"
+                        name="ARIA Demo"
+                        items='["apple"]'
+                        color="#9b59b6">
+                    </ck-primitive-array>
+                    <div id="ariaLabel" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                        <div style="color: #666;">Current aria-label: "Item: apple"</div>
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Edit the input to see the ARIA label update
+                    </p>
+                </div>
+            </div>
+
+            <pre><code><span class="comment">// Change events fire on every keystroke:</span>
+<span class="keyword">element</span>.addEventListener(<span class="string">'change'</span>, <span class="keyword">(e)</span> => {
+  console.log(<span class="string">'Items:'</span>, e.detail.items);
+});
+
+<span class="comment">// Form integration with hidden inputs:</span>
+<span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">name</span>=<span class="string">"tags"</span> <span class="highlight">items</span>=<span class="string">'["a","b"]'</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span>
+<span class="comment">// Creates: &lt;input type="hidden" name="tags[]" value="a" /&gt;</span>
+<span class="comment">//          &lt;input type="hidden" name="tags[]" value="b" /&gt;</span>
+
+<span class="comment">// Validation: empty values get aria-invalid + .has-error class</span>
+<span class="comment">// ARIA labels update dynamically: aria-label="Item: {value}"</span></code></pre>
+        </div>
+
+        <script>
+            // Edit demo - log change events
+            const editDemo = document.getElementById('editDemo');
+            const editEventLog = document.getElementById('editEventLog');
+            let eventCount = 0;
+            const maxLogs = 5;
+            const logs = [];
+
+            editDemo.addEventListener('change', (e) => {
+                eventCount++;
+                const value = e.detail.items[0]?.value || '(empty)';
+                logs.unshift(`#${eventCount}: "${value}"`);
+                if (logs.length > maxLogs) logs.pop();
+                editEventLog.innerHTML = logs.map(log => `<div>${log}</div>`).join('');
+            });
+
+            // Form demo - show form data on submit
+            const demoForm = document.getElementById('demoForm');
+            const formDataDiv = document.getElementById('formData');
+
+            demoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(demoForm);
+                const tags = formData.getAll('tags[]');
+                formDataDiv.innerHTML = `
+                    <div style="color: #2ecc71; font-weight: bold;">Form Submitted!</div>
+                    <div>tags[] = ${JSON.stringify(tags)}</div>
+                `;
+            });
+
+            // ARIA demo - show current aria-label
+            const ariaDemo = document.getElementById('ariaDemo');
+            const ariaLabel = document.getElementById('ariaLabel');
+
+            ariaDemo.addEventListener('change', () => {
+                const input = ariaDemo.shadowRoot.querySelector('input[type="text"]');
+                const label = input?.getAttribute('aria-label') || 'N/A';
+                ariaLabel.innerHTML = `<div style="color: #9b59b6;">Current aria-label: "${label}"</div>`;
+            });
+        </script>
+
         <!-- Dynamic Items -->
         <div class="section">
-            <h2>12. Dynamic Items via JavaScript</h2>
+            <h2>13. Dynamic Items via JavaScript</h2>
             <p>Add and update items programmatically using the <code>items</code> property.</p>
             <div class="controls">
                 <div class="control-group">

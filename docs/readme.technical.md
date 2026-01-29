@@ -335,6 +335,169 @@ input.addEventListener('keydown', (e: KeyboardEvent) => {
 - ✅ Respects readonly state (consistent with button behavior)
 - ✅ Provides keyboard accessibility (complements mouse interaction)
 
+## Inline Edit Implementation (Phase 2.1)
+
+### Overview
+
+Each item input supports real-time inline editing with change events, form integration, accessibility, and validation.
+
+### Implementation Details
+
+#### Input Event Listener
+
+Located in `createItemRow()` method at lines 268-294:
+
+```typescript
+input.addEventListener('input', () => {
+  // 1. Update internal state
+  itemState.value = input.value;
+
+  // 2. Update ARIA label for accessibility
+  input.setAttribute('aria-label', `Item: ${input.value}`);
+
+  // 3. Sync hidden input (if exists)
+  if (hiddenInput) {
+    hiddenInput.value = input.value;
+  }
+
+  // 4. Validation: empty value check
+  if (input.value === '') {
+    input.setAttribute('aria-invalid', 'true');
+    itemRow.classList.add('has-error');
+  } else {
+    input.removeAttribute('aria-invalid');
+    itemRow.classList.remove('has-error');
+  }
+
+  // 5. Dispatch change event
+  this.dispatchEvent(
+    new CustomEvent('change', {
+      bubbles: true,
+      detail: { items: this.items },
+    })
+  );
+});
+```
+
+**Execution Order**:
+1. **State Update**: `itemState.value` updated first (source of truth)
+2. **ARIA Update**: Dynamic label for screen readers
+3. **Hidden Input Sync**: Form integration (if `name` attribute set)
+4. **Validation**: Empty value detection
+5. **Event Dispatch**: Notify parent component/application
+
+**Performance Note**: Dispatches change event on EVERY keystroke. For performance-critical applications, consider debouncing.
+
+### Feature Components
+
+#### Hidden Input Creation
+
+Lines 258-266:
+```typescript
+let hiddenInput: HTMLInputElement | null = null;
+const formName = this.getAttribute('name');
+if (formName) {
+  hiddenInput = document.createElement('input');
+  hiddenInput.type = 'hidden';
+  hiddenInput.name = `${formName}[]`;  // Array notation
+  hiddenInput.value = itemState.value;
+}
+```
+
+**Design Decisions**:
+- ✅ Conditional creation (only when `name` attribute present)
+- ✅ Array notation `[]` for multiple values
+- ✅ Closure reference for sync in input listener
+
+#### ARIA Accessibility
+
+Lines 250-251, 271-272:
+```typescript
+// Initial setup
+input.setAttribute('aria-label', `Item: ${itemState.value}`);
+
+// Dynamic update
+input.setAttribute('aria-label', `Item: ${input.value}`);
+```
+
+**Accessibility Benefits**:
+- Screen readers announce item context ("Item: apple")
+- Updates reflect current value (not stale)
+- Distinguishes between multiple inputs in list
+
+#### Soft-Delete Support
+
+Lines 253-256:
+```typescript
+if (itemState.deleted) {
+  input.disabled = true;
+}
+```
+
+**Design Decisions**:
+- ✅ Uses `disabled` (not `readonly`) for full prevention
+- ✅ Browser-default visual styling (grayed out)
+- ✅ Prevents keyboard/mouse interaction
+- ✅ Excludes from form submission
+
+#### Validation
+
+Lines 279-286:
+```typescript
+if (input.value === '') {
+  input.setAttribute('aria-invalid', 'true');
+  itemRow.classList.add('has-error');
+} else {
+  input.removeAttribute('aria-invalid');
+  itemRow.classList.remove('has-error');
+}
+```
+
+**Dual Indicators**:
+1. **Semantic**: `aria-invalid="true"` (for AT)
+2. **Visual**: `.has-error` class (for CSS styling)
+
+**Validation Rules**:
+- Only validates empty string
+- No min/max length enforcement
+- No character restrictions
+- Extensible via CSS
+
+### Testing Strategy
+
+**Test Coverage**: 8 tests (2.1.1-2.1.8)
+- State updates (1 test)
+- Change events (2 tests)
+- Hidden inputs (1 test)
+- Soft-delete (1 test)
+- Identity preservation (1 test)
+- ARIA labels (1 test)
+- Validation (1 test)
+
+**Test Patterns**:
+```typescript
+// Dispatch input event to trigger listener
+input.value = 'new value';
+input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+// Verify state, event, and side effects
+expect(el.items[0].value).toBe('new value');
+expect(changeHandler).toHaveBeenCalledTimes(1);
+```
+
+### Memory Management
+
+**Lifecycle**:
+- Input listener created in `createItemRow()`
+- Listener removed automatically when input removed from DOM
+- Hidden input closure reference garbage collected with listener
+- No explicit cleanup needed
+
+**No Memory Leaks**:
+- ✅ No event listeners on component instance
+- ✅ No global state references
+- ✅ Closure variables cleaned up with DOM
+
 ## Future Enhancements
 
 ### Potential Features

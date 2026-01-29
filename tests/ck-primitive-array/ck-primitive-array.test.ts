@@ -803,4 +803,203 @@ describe('CkPrimitiveArray Component', () => {
       document.body.removeChild(el);
     });
   });
+
+  describe('Inline Edit', () => {
+    test('should update state when input value changes', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Change input value
+      input.value = 'b';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // State should update
+      expect(el.items[0].value).toBe('b');
+
+      document.body.removeChild(el);
+    });
+
+    test('should dispatch change event when input value changes', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Change input value
+      input.value = 'b';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // Should dispatch change event
+      expect(handler).toHaveBeenCalledTimes(1);
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          items: Array<{ id: string; value: string; deleted: boolean }>;
+        };
+      };
+      expect(event.detail.items[0].value).toBe('b');
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should dispatch change event on every keystroke', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '[""]');
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Type three characters
+      input.value = 'a';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      input.value = 'ab';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      input.value = 'abc';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // Should have 3 change events
+      expect(handler).toHaveBeenCalledTimes(3);
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should update hidden inputs when name attribute is set', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const hiddenInput = el.shadowRoot?.querySelector(
+        'input[type="hidden"]'
+      ) as HTMLInputElement;
+
+      // Hidden input should exist
+      expect(hiddenInput).toBeTruthy();
+      expect(hiddenInput?.name).toBe('tags[]');
+      expect(hiddenInput?.value).toBe('a');
+
+      // Change input value
+      input.value = 'new value';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // Hidden input should update
+      expect(hiddenInput?.value).toBe('new value');
+
+      document.body.removeChild(el);
+    });
+
+    test('should not allow editing soft-deleted items', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      // Manually add an item and mark it deleted
+      el.addItem('test');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (el as any).itemsState[0].deleted = true;
+
+      // Re-render to reflect deleted state
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (el as any).renderItems();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Input should be disabled or readonly
+      expect(input.disabled || input.readOnly).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('should preserve item identity when editing', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const originalId = el.items[0].id;
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Change value
+      input.value = 'new value';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // ID should remain the same
+      expect(el.items[0].id).toBe(originalId);
+      expect(el.items[0].value).toBe('new value');
+
+      document.body.removeChild(el);
+    });
+
+    test('should update aria-label when value changes', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Initial aria-label should reflect value
+      expect(input.getAttribute('aria-label')).toContain('a');
+
+      // Change value
+      input.value = 'b';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // aria-label should update
+      expect(input.getAttribute('aria-label')).toContain('b');
+
+      document.body.removeChild(el);
+    });
+
+    test('should show validation error when value is empty', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const itemRow = input.closest('.ck-primitive-array__item') as HTMLElement;
+
+      // Clear the value
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // Should have validation error indicator
+      const hasError =
+        itemRow.classList.contains('has-error') ||
+        itemRow.hasAttribute('data-error') ||
+        input.classList.contains('error') ||
+        input.hasAttribute('aria-invalid');
+
+      expect(hasError).toBe(true);
+
+      document.body.removeChild(el);
+    });
+  });
 });
