@@ -189,6 +189,98 @@ if (input.value === '') {
 - Accessibility announcements
 - Custom error messages via CSS
 
+### Soft Delete & Undo (Phase 2.2 & 2.3)
+
+The component supports soft-deletion of items, allowing users to mark items as deleted without permanently removing them. Deleted items can be restored via an undo operation.
+
+#### Delete Button Behavior
+
+Each item row contains a delete button that toggles between delete and undo states:
+
+```html
+<!-- Active item -->
+<button type="button" data-action="delete" aria-pressed="false">Delete</button>
+
+<!-- Soft-deleted item -->
+<button type="button" data-action="delete" aria-pressed="true">Undo</button>
+```
+
+**Delete Operation (2.2)**:
+1. Click "Delete" button
+2. `itemState.deleted` becomes `true`
+3. Button text changes to "Undo"
+4. Button `aria-pressed` becomes `"true"`
+5. Input becomes disabled (`input.disabled = true`)
+6. Row gains `part="item deleted"` attribute
+7. Hidden input name changes to `deleted-{name}[]`
+8. Focus remains on button (now showing "Undo")
+9. `change` event dispatches with separate `active` and `deleted` arrays
+
+**Undo Operation (2.3)**:
+1. Click "Undo" button
+2. `itemState.deleted` becomes `false`
+3. Button text changes to "Delete"
+4. Button `aria-pressed` becomes `"false"`
+5. Input becomes enabled (`input.disabled = false`)
+6. Row has `part="item"` attribute
+7. Hidden input name changes back to `{name}[]`
+8. Focus remains on button (now showing "Delete")
+9. `change` event dispatches with item in `active` array
+
+#### Change Event Structure
+
+Soft delete/undo operations dispatch enhanced `change` events:
+
+```javascript
+el.addEventListener('change', (e) => {
+  console.log('All items:', e.detail.items);       // All items
+  console.log('Active items:', e.detail.active);   // Only active items
+  console.log('Deleted items:', e.detail.deleted); // Only soft-deleted items
+});
+```
+
+**Event Details**:
+- **Type**: `CustomEvent`
+- **Bubbles**: `true`
+- **Detail**:
+  - `items`: Full array of all items (active + deleted)
+  - `active`: Array of items where `deleted === false`
+  - `deleted`: Array of items where `deleted === true`
+
+#### Visual Styling
+
+Deleted items receive styling hooks via the `part` attribute:
+
+```css
+/* Style deleted items */
+ck-primitive-array::part(deleted) {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+```
+
+#### Form Integration
+
+Soft-deleted items use a separate hidden input namespace:
+
+```html
+<!-- Active item -->
+<input type="hidden" name="tags[]" value="active item" />
+
+<!-- Deleted item -->
+<input type="hidden" name="deleted-tags[]" value="deleted item" />
+```
+
+This allows server-side code to differentiate between active and soft-deleted items.
+
+#### Accessibility
+
+- **aria-pressed**: Toggle button uses `aria-pressed` to indicate delete state
+  - `"false"` = Active item (showing "Delete")
+  - `"true"` = Deleted item (showing "Undo")
+- **Disabled inputs**: Soft-deleted items have `input.disabled = true`
+- **Focus management**: Focus remains on the button after toggle
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -321,7 +413,22 @@ element.setAttribute('color', 'blue');
 45. ✅ Edit updates aria-label (2.1.7)
 46. ✅ Empty edit triggers validation (2.1.8)
 
-**Total**: 53 tests passing
+48. ✅ Delete button marks item deleted (2.2.1)
+49. ✅ Deleted item shows undo button (2.2.2)
+50. ✅ Deleted item has visual styling (2.2.3)
+51. ✅ Focus moves to undo button (2.2.4)
+52. ✅ Change event on soft delete (2.2.5)
+53. ✅ Hidden input moves to deleted-name (2.2.6)
+54. ✅ aria-pressed updates on delete (2.2.7)
+
+55. ✅ Undo restores item to active (2.3.1)
+56. ✅ Restored item is editable (2.3.2)
+57. ✅ Focus moves to delete button (2.3.3)
+58. ✅ Change event on undo (2.3.4)
+59. ✅ Hidden input moves back to name (2.3.5)
+60. ✅ aria-pressed updates on undo (2.3.6)
+
+**Total**: 66 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

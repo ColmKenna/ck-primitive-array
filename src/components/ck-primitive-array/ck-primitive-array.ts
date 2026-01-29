@@ -242,12 +242,67 @@ export class CkPrimitiveArray extends HTMLElement {
     itemRow.setAttribute('role', 'listitem');
     itemRow.setAttribute('data-id', itemState.id);
 
+    // Set part attribute for styling based on deleted state
+    if (itemState.deleted) {
+      itemRow.setAttribute('part', 'item deleted');
+    } else {
+      itemRow.setAttribute('part', 'item');
+    }
+
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'ck-primitive-array__input';
     input.value = itemState.value;
+
+    // Set aria-label for accessibility
+    input.setAttribute('aria-label', `Item: ${itemState.value}`);
+
+    // Disable input if item is soft-deleted
+    if (itemState.deleted) {
+      input.disabled = true;
+    }
+
+    // Create hidden input for form integration if name attribute is set
+    let hiddenInput: HTMLInputElement | null = null;
+    const formName = this.getAttribute('name');
+    if (formName) {
+      hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      // Use deleted-name[] for soft-deleted items
+      if (itemState.deleted) {
+        hiddenInput.name = `deleted-${formName}[]`;
+      } else {
+        hiddenInput.name = `${formName}[]`;
+      }
+      hiddenInput.value = itemState.value;
+    }
+
     input.addEventListener('input', () => {
       itemState.value = input.value;
+
+      // Update aria-label
+      input.setAttribute('aria-label', `Item: ${input.value}`);
+
+      // Update hidden input if it exists
+      if (hiddenInput) {
+        hiddenInput.value = input.value;
+      }
+
+      // Validation: mark as invalid if empty
+      if (input.value === '') {
+        input.setAttribute('aria-invalid', 'true');
+        itemRow.classList.add('has-error');
+      } else {
+        input.removeAttribute('aria-invalid');
+        itemRow.classList.remove('has-error');
+      }
+
+      this.dispatchEvent(
+        new CustomEvent('change', {
+          bubbles: true,
+          detail: { items: this.items },
+        })
+      );
     });
     input.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
@@ -262,7 +317,54 @@ export class CkPrimitiveArray extends HTMLElement {
     deleteButton.type = 'button';
     deleteButton.className = 'ck-primitive-array__delete';
     deleteButton.setAttribute('data-action', 'delete');
-    deleteButton.textContent = 'Delete';
+    deleteButton.setAttribute('aria-pressed', itemState.deleted ? 'true' : 'false');
+    deleteButton.textContent = itemState.deleted ? 'Undo' : 'Delete';
+
+    deleteButton.addEventListener('click', () => {
+      itemState.deleted = !itemState.deleted;
+      
+      // Update button text and aria-pressed
+      deleteButton.textContent = itemState.deleted ? 'Undo' : 'Delete';
+      deleteButton.setAttribute('aria-pressed', itemState.deleted ? 'true' : 'false');
+      
+      // Update part attribute on row
+      if (itemState.deleted) {
+        itemRow.setAttribute('part', 'item deleted');
+      } else {
+        itemRow.setAttribute('part', 'item');
+      }
+      
+      // Update input disabled state
+      input.disabled = itemState.deleted;
+      
+      // Update hidden input name if it exists
+      if (hiddenInput && formName) {
+        if (itemState.deleted) {
+          hiddenInput.name = `deleted-${formName}[]`;
+        } else {
+          hiddenInput.name = `${formName}[]`;
+        }
+      }
+      
+      // Focus the button after toggle
+      deleteButton.focus();
+      
+      // Dispatch change event with separate active/deleted arrays
+      const allItems = this.items;
+      const activeItems = allItems.filter(item => !item.deleted);
+      const deletedItems = allItems.filter(item => item.deleted);
+      
+      this.dispatchEvent(
+        new CustomEvent('change', {
+          bubbles: true,
+          detail: {
+            items: allItems,
+            active: activeItems,
+            deleted: deletedItems,
+          },
+        })
+      );
+    });
 
     const removeButton = document.createElement('button');
     removeButton.type = 'button';
@@ -271,6 +373,9 @@ export class CkPrimitiveArray extends HTMLElement {
     removeButton.textContent = 'X';
 
     itemRow.appendChild(input);
+    if (hiddenInput) {
+      itemRow.appendChild(hiddenInput);
+    }
     itemRow.appendChild(deleteButton);
     itemRow.appendChild(removeButton);
 

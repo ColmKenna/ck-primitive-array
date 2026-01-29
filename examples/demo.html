@@ -463,6 +463,31 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                 <div class="demo-item">
+                    <h3>Soft Delete & Undo</h3>
+                    <style>
+                        ck-primitive-array::part(deleted) {
+                            opacity: 0.6;
+                        }
+                        ck-primitive-array::part(deleted) input {
+                            text-decoration: line-through;
+                        }
+                    </style>
+                    <ck-primitive-array
+                        id="softDeleteDemo"
+                        name="tasks"
+                        items='["Write tests","Implement feature","Deploy"]'
+                        color="#3498db">
+                    </ck-primitive-array>
+                    <div id="softDeleteLog" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                        <strong>Active:</strong> 3 item(s)<br>
+                        <strong>Deleted:</strong> 0 item(s)<br>
+                        <strong>Total:</strong> 3 item(s)
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Click "Delete" to soft-delete an item, "Undo" to restore it
+                    </p>
+                </div>
+                <div class="demo-item">
                     <h3>Validation (Empty Values)</h3>
                     <style>
                         .ck-primitive-array__item.has-error input {
@@ -483,6 +508,9 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
                         💡 Clear the input to trigger validation error (red border)
                     </p>
                 </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem;">
                 <div class="demo-item">
                     <h3>ARIA Labels (Accessibility)</h3>
                     <ck-primitive-array
@@ -636,6 +664,21 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
         clearItemsBtn.addEventListener('click', () => {
             dynamicItems.items = [];
         });
+
+        // Setup soft delete demo
+        const softDeleteDemo = document.getElementById('softDeleteDemo');
+        const softDeleteLog = document.getElementById('softDeleteLog');
+        if (softDeleteDemo && softDeleteLog) {
+            softDeleteDemo.addEventListener('change', (e) => {
+                const active = e.detail?.active || [];
+                const deleted = e.detail?.deleted || [];
+                softDeleteLog.innerHTML = `
+                    <strong>Active:</strong> ${active.length} item(s)<br>
+                    <strong>Deleted:</strong> ${deleted.length} item(s)<br>
+                    <strong>Total:</strong> ${e.detail?.items.length} item(s)
+                `;
+            });
+        }
             element.name = `Dynamic #${counter}`;
             element.color = colors[counter % colors.length];
             element.style.marginBottom = '1rem';

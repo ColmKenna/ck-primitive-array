@@ -1002,4 +1002,324 @@ describe('CkPrimitiveArray Component', () => {
       document.body.removeChild(el);
     });
   });
+
+  describe('Soft Delete', () => {
+    test('Delete button marks item deleted', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      expect(deleteBtn).toBeTruthy();
+
+      deleteBtn.click();
+
+      const items = el.items;
+      expect(items[0].deleted).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('Deleted item shows undo button', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // After delete, the button should still exist and show "Undo"
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      expect(undoBtn).toBeTruthy();
+      expect(undoBtn.textContent).toBe('Undo');
+
+      document.body.removeChild(el);
+    });
+
+    test('Deleted item has visual styling', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const itemRow = el.shadowRoot?.querySelector(
+        '[role="listitem"]'
+      ) as HTMLElement;
+      expect(itemRow.getAttribute('part')).toContain('deleted');
+
+      document.body.removeChild(el);
+    });
+
+    test('Focus moves to undo button', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      expect(el.shadowRoot?.activeElement).toBe(undoBtn);
+
+      document.body.removeChild(el);
+    });
+
+    test('Change event on soft delete', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          items: Array<{ id: string; value: string; deleted: boolean }>;
+          active?: Array<{ id: string; value: string; deleted: boolean }>;
+          deleted?: Array<{ id: string; value: string; deleted: boolean }>;
+        };
+      };
+      expect(event.detail.deleted).toBeDefined();
+      expect(event.detail.deleted).toHaveLength(1);
+      expect(event.detail.deleted![0].value).toBe('test item');
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('Hidden input moves to deleted-name', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'myfield');
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const hiddenInput = el.shadowRoot?.querySelector(
+        'input[type="hidden"]'
+      ) as HTMLInputElement;
+      expect(hiddenInput.name).toBe('deleted-myfield[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('aria-pressed updates on delete', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      
+      // Initially not pressed
+      expect(deleteBtn.getAttribute('aria-pressed')).toBe('false');
+      
+      deleteBtn.click();
+
+      // After delete, should be pressed
+      expect(deleteBtn.getAttribute('aria-pressed')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Undo Delete', () => {
+    test('Undo restores item to active', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // Item should be deleted
+      expect(el.items[0].deleted).toBe(true);
+
+      // Click again to undo
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      undoBtn.click();
+
+      // Item should be restored
+      expect(el.items[0].deleted).toBe(false);
+
+      document.body.removeChild(el);
+    });
+
+    test('Restored item is editable', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // Input should be disabled after delete
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(input.disabled).toBe(true);
+
+      // Undo
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      undoBtn.click();
+
+      // Input should be enabled after undo
+      expect(input.disabled).toBe(false);
+
+      document.body.removeChild(el);
+    });
+
+    test('Focus moves to delete button', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      // First soft-delete
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // Then undo
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      undoBtn.click();
+
+      // Focus should be on the delete button
+      const newDeleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      expect(el.shadowRoot?.activeElement).toBe(newDeleteBtn);
+
+      document.body.removeChild(el);
+    });
+
+    test('Change event on undo', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      // Delete first
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // Listen for change on undo
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      // Undo
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      undoBtn.click();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          items: Array<{ id: string; value: string; deleted: boolean }>;
+          active?: Array<{ id: string; value: string; deleted: boolean }>;
+          deleted?: Array<{ id: string; value: string; deleted: boolean }>;
+        };
+      };
+      expect(event.detail.active).toBeDefined();
+      expect(event.detail.active).toHaveLength(1);
+      expect(event.detail.active![0].value).toBe('test item');
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('Hidden input moves back to name', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'myfield');
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      // Delete
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // Verify it's in deleted state
+      let hiddenInput = el.shadowRoot?.querySelector(
+        'input[type="hidden"]'
+      ) as HTMLInputElement;
+      expect(hiddenInput.name).toBe('deleted-myfield[]');
+
+      // Undo
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      undoBtn.click();
+
+      // Verify it's back to normal
+      hiddenInput = el.shadowRoot?.querySelector(
+        'input[type="hidden"]'
+      ) as HTMLInputElement;
+      expect(hiddenInput.name).toBe('myfield[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('aria-pressed updates on undo', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test item"]');
+      document.body.appendChild(el);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // After delete, should be pressed
+      expect(deleteBtn.getAttribute('aria-pressed')).toBe('true');
+
+      // Undo
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      undoBtn.click();
+
+      // After undo, should not be pressed
+      expect(undoBtn.getAttribute('aria-pressed')).toBe('false');
+
+      document.body.removeChild(el);
+    });
+  });
 });

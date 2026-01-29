@@ -323,6 +323,41 @@ const currentItems = greeting.items; // Returns: { id, value, deleted }[]
 </ck-primitive-array>
 ```
 
+#### Example 5: Soft Delete & Undo
+
+```html
+<!-- Items with delete/undo functionality -->
+<ck-primitive-array 
+  name="tasks"
+  items='["Complete report", "Review code", "Deploy"]'>
+</ck-primitive-array>
+
+<script>
+  const taskList = document.querySelector('ck-primitive-array');
+  
+  // Listen for changes
+  taskList.addEventListener('change', (e) => {
+    console.log('Active tasks:', e.detail.active.length);
+    console.log('Deleted tasks:', e.detail.deleted.length);
+    
+    // Could submit to server, update UI, etc.
+    e.detail.active.forEach(item => {
+      console.log('✓', item.value);
+    });
+    e.detail.deleted.forEach(item => {
+      console.log('✗', item.value);
+    });
+  });
+</script>
+```
+
+**Soft Delete Features**:
+- Click "Delete" to soft-delete an item (marks as deleted, disables input)
+- Click "Undo" to restore a deleted item
+- Deleted items are still in the DOM but visually distinguished
+- Change events include separate `active` and `deleted` arrays
+- Hidden form inputs use `deleted-{name}[]` namespace for deleted items
+
 ### Browser Support
 
 The component works in all modern browsers that support:
