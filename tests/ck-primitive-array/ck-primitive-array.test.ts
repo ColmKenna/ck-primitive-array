@@ -1134,10 +1134,10 @@ describe('CkPrimitiveArray Component', () => {
       const deleteBtn = el.shadowRoot?.querySelector(
         '[data-action="delete"]'
       ) as HTMLButtonElement;
-      
+
       // Initially not pressed
       expect(deleteBtn.getAttribute('aria-pressed')).toBe('false');
-      
+
       deleteBtn.click();
 
       // After delete, should be pressed
@@ -1318,6 +1318,154 @@ describe('CkPrimitiveArray Component', () => {
 
       // After undo, should not be pressed
       expect(undoBtn.getAttribute('aria-pressed')).toBe('false');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Hard Remove', () => {
+    test('should delete item permanently when remove clicked', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b", "c"]');
+      document.body.appendChild(el);
+
+      // Get the middle item's remove button
+      const removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      expect(removeButtons?.length).toBe(3);
+
+      // Click remove on second item ("b")
+      (removeButtons?.[1] as HTMLButtonElement).click();
+
+      // Item should be removed from items property
+      const items = el.items;
+      expect(items.length).toBe(2);
+      expect(items[0].value).toBe('a');
+      expect(items[1].value).toBe('c');
+      // "b" should not be in the array
+      const hasB = items.some(item => item.value === 'b');
+      expect(hasB).toBe(false);
+
+      document.body.removeChild(el);
+    });
+
+    test('should remove row from DOM when item removed', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b", "c"]');
+      document.body.appendChild(el);
+
+      // Verify 3 rows exist
+      let rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      expect(rows?.length).toBe(3);
+
+      // Remove middle item
+      const removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      (removeButtons?.[1] as HTMLButtonElement).click();
+
+      // Verify only 2 rows remain
+      rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      expect(rows?.length).toBe(2);
+
+      document.body.removeChild(el);
+    });
+
+    test('should move focus to Add button when remove clicked', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(el.shadowRoot?.activeElement).toBe(addButton);
+
+      document.body.removeChild(el);
+    });
+
+    test('should dispatch change event when item removed', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b", "c"]');
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      (removeButtons?.[1] as HTMLButtonElement).click();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          items: Array<{ id: string; value: string; deleted: boolean }>;
+        };
+      };
+      expect(event.detail.items.length).toBe(2);
+      expect(event.detail.items[0].value).toBe('a');
+      expect(event.detail.items[1].value).toBe('c');
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should remove hidden input when item has name attribute', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["a", "b", "c"]');
+      document.body.appendChild(el);
+
+      // Verify 3 hidden inputs exist
+      let hiddenInputs = el.shadowRoot?.querySelectorAll(
+        'input[type="hidden"]'
+      );
+      expect(hiddenInputs?.length).toBe(3);
+
+      // Remove middle item
+      const removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      (removeButtons?.[1] as HTMLButtonElement).click();
+
+      // Verify only 2 hidden inputs remain
+      hiddenInputs = el.shadowRoot?.querySelectorAll('input[type="hidden"]');
+      expect(hiddenInputs?.length).toBe(2);
+
+      document.body.removeChild(el);
+    });
+
+    test('should re-index remaining items after removal', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b", "c"]');
+      document.body.appendChild(el);
+
+      // Remove middle item "b"
+      const removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      (removeButtons?.[1] as HTMLButtonElement).click();
+
+      // Check that remaining items are re-indexed in ARIA labels
+      const inputs = el.shadowRoot?.querySelectorAll('input[type="text"]');
+      expect(inputs?.length).toBe(2);
+
+      // First item should still be "Item 1" or "Item: a"
+      expect(
+        (inputs?.[0] as HTMLInputElement).getAttribute('aria-label')
+      ).toMatch(/Item.*[1a]/i);
+
+      // Third item (now second) should be "Item 2" or similar
+      expect(
+        (inputs?.[1] as HTMLInputElement).getAttribute('aria-label')
+      ).toMatch(/Item.*[2c]/i);
 
       document.body.removeChild(el);
     });

@@ -372,6 +372,42 @@ export class CkPrimitiveArray extends HTMLElement {
     removeButton.setAttribute('data-action', 'remove');
     removeButton.textContent = 'X';
 
+    removeButton.addEventListener('click', () => {
+      // Remove from state
+      const index = this.itemsState.findIndex(item => item.id === itemState.id);
+      if (index !== -1) {
+        this.itemsState.splice(index, 1);
+      }
+
+      // Remove from DOM
+      itemRow.remove();
+
+      // Update placeholder
+      this.updatePlaceholder();
+
+      // Re-index ARIA labels for remaining items
+      this.updateAriaLabels();
+
+      // Focus Add button
+      this.addButton?.focus();
+
+      // Dispatch change event
+      const allItems = this.items;
+      const activeItems = allItems.filter(item => !item.deleted);
+      const deletedItems = allItems.filter(item => item.deleted);
+
+      this.dispatchEvent(
+        new CustomEvent('change', {
+          bubbles: true,
+          detail: {
+            items: allItems,
+            active: activeItems,
+            deleted: deletedItems,
+          },
+        })
+      );
+    });
+
     itemRow.appendChild(input);
     if (hiddenInput) {
       itemRow.appendChild(hiddenInput);
@@ -403,6 +439,16 @@ export class CkPrimitiveArray extends HTMLElement {
       this.placeholderElement.style.display =
         this.itemsState.length > 0 ? 'none' : '';
     }
+  }
+
+  private updateAriaLabels() {
+    if (!this.listElement) return;
+
+    const inputs = this.listElement.querySelectorAll('input[type="text"]');
+    inputs.forEach((input, index) => {
+      const itemValue = (input as HTMLInputElement).value;
+      input.setAttribute('aria-label', `Item: ${itemValue}`);
+    });
   }
 
   addItem(value?: string) {

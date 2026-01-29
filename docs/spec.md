@@ -281,6 +281,134 @@ This allows server-side code to differentiate between active and soft-deleted it
 - **Disabled inputs**: Soft-deleted items have `input.disabled = true`
 - **Focus management**: Focus remains on the button after toggle
 
+---
+
+### Hard Remove (Phase 2.4)
+
+The component supports permanent deletion of items via the Remove button ("X"). Unlike soft delete, hard remove permanently removes the item from state and DOM with no undo capability.
+
+#### Remove Button Behavior
+
+Each item row contains a remove button for permanent deletion:
+
+```html
+<!-- Remove button in each row -->
+<button type="button" data-action="remove">X</button>
+```
+
+**Remove Operation (2.4)**:
+1. Click "X" button (remove button)
+2. Item permanently removed from `itemsState` array
+3. Row removed from DOM
+4. Hidden input (if exists) removed from DOM
+5. Remaining items' ARIA labels updated (re-indexed)
+6. Focus moves to Add button
+7. `change` event dispatches with updated arrays
+
+#### Permanent Deletion
+
+Hard remove permanently deletes items:
+
+```javascript
+// Before removal (3 items)
+el.items = [
+  { id: 'item-1', value: 'a', deleted: false },
+  { id: 'item-2', value: 'b', deleted: false },
+  { id: 'item-3', value: 'c', deleted: false }
+];
+
+// Remove middle item (click X button on "b")
+// After removal (2 items)
+el.items = [
+  { id: 'item-1', value: 'a', deleted: false },
+  { id: 'item-3', value: 'c', deleted: false }
+];
+// Item "b" is gone permanently - no undo
+```
+
+#### Change Event on Remove
+
+Hard remove dispatches standard change events:
+
+```javascript
+el.addEventListener('change', (e) => {
+  console.log('Total items:', e.detail.items.length);       // 2 (was 3)
+  console.log('Active items:', e.detail.active.length);     // 2
+  console.log('Deleted items:', e.detail.deleted.length);   // 0
+});
+```
+
+**Event Details**:
+- **Type**: `CustomEvent`
+- **Bubbles**: `true`
+- **Detail**:
+  - `items`: Updated array (removed item excluded)
+  - `active`: Active items only (removed item excluded)
+  - `deleted`: Soft-deleted items only
+
+#### ARIA Label Re-indexing
+
+After removal, remaining items' ARIA labels are updated:
+
+```html
+<!-- Before removal (3 items) -->
+<input type="text" value="a" aria-label="Item: a" />
+<input type="text" value="b" aria-label="Item: b" />
+<input type="text" value="c" aria-label="Item: c" />
+
+<!-- After removing "b" (2 items) -->
+<input type="text" value="a" aria-label="Item: a" />
+<input type="text" value="c" aria-label="Item: c" />
+```
+
+ARIA labels stay synchronized with current item values for screen reader accessibility.
+
+#### Focus Management
+
+After removal, focus moves to the Add button:
+
+```javascript
+// User clicks Remove button → focus moves to Add button
+removeButton.click(); // → Add button receives focus
+```
+
+This allows keyboard users to immediately add a replacement item if desired.
+
+#### Form Integration
+
+Hidden inputs are removed when items are removed:
+
+```html
+<!-- Before removal -->
+<input type="hidden" name="tags[]" value="a" />
+<input type="hidden" name="tags[]" value="b" />
+<input type="hidden" name="tags[]" value="c" />
+
+<!-- After removing "b" -->
+<input type="hidden" name="tags[]" value="a" />
+<input type="hidden" name="tags[]" value="c" />
+```
+
+The hidden input for the removed item is removed from the DOM, ensuring form submissions don't include deleted items.
+
+#### Soft Delete vs Hard Remove
+
+| Feature | Soft Delete | Hard Remove |
+|---------|-------------|-------------|
+| **Trigger** | Delete button | X button |
+| **Reversible** | Yes (Undo button) | No |
+| **DOM** | Row remains (styled as deleted) | Row removed |
+| **State** | `deleted: true` | Item removed from array |
+| **Hidden Input** | Renamed to `deleted-{name}[]` | Removed entirely |
+| **Focus** | Stays on toggle button | Moves to Add button |
+
+#### Accessibility
+
+- **Focus management**: Focus moves to Add button (consistent with Enter key)
+- **ARIA labels**: Labels updated after removal to reflect new indices
+- **Keyboard navigation**: Add button receives focus for quick replacement
+- **Screen readers**: Updated ARIA labels announced on focus
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -428,7 +556,14 @@ element.setAttribute('color', 'blue');
 59. ✅ Hidden input moves back to name (2.3.5)
 60. ✅ aria-pressed updates on undo (2.3.6)
 
-**Total**: 66 tests passing
+61. ✅ Remove button deletes item permanently (2.4.1)
+62. ✅ Row is removed from DOM (2.4.2)
+63. ✅ Focus moves to Add button (2.4.3)
+64. ✅ Change event on remove (2.4.4)
+65. ✅ Hidden input is removed (2.4.5)
+66. ✅ Other items' indices update (2.4.6)
+
+**Total**: 72 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

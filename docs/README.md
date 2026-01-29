@@ -358,6 +358,55 @@ const currentItems = greeting.items; // Returns: { id, value, deleted }[]
 - Change events include separate `active` and `deleted` arrays
 - Hidden form inputs use `deleted-{name}[]` namespace for deleted items
 
+---
+
+#### Example 6: Hard Remove (Permanent Deletion)
+
+For permanent removal of items, use the Remove button ("X"):
+
+```html
+<ck-primitive-array
+  name="fruits"
+  items='["apple", "banana", "cherry"]'>
+</ck-primitive-array>
+
+<script>
+  const fruitList = document.querySelector('ck-primitive-array');
+
+  // Listen for changes
+  fruitList.addEventListener('change', (e) => {
+    console.log('Total items:', e.detail.items.length);
+    // Items will permanently exclude removed items
+    e.detail.items.forEach(item => {
+      console.log('-', item.value);
+    });
+  });
+</script>
+```
+
+**Hard Remove Features**:
+- **Permanent**: Removed items cannot be undone
+- **DOM Cleanup**: Row and hidden inputs removed from DOM
+- **State Cleanup**: Item removed from `items` array
+- **ARIA Updates**: Remaining items' labels re-indexed
+- **Focus Management**: Focus moves to Add button after removal
+
+**Soft Delete vs Hard Remove**:
+
+| Feature | Soft Delete (Delete) | Hard Remove (X) |
+|---------|---------------------|-----------------|
+| **Reversible** | ✅ Yes (Undo) | ❌ No |
+| **DOM** | Row stays | Row removed |
+| **State** | `deleted: true` | Removed |
+| **Form** | `deleted-{name}[]` | Not sent |
+| **Use Case** | Review later | Immediate discard |
+
+**When to use each**:
+- **Soft Delete**: User might want to undo, data should be reviewed before final submission
+- **Hard Remove**: Item was added by mistake, permanent removal is desired immediately
+
+---
+
 ### Browser Support
 
 The component works in all modern browsers that support:

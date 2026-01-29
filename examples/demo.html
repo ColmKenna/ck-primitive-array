@@ -679,6 +679,50 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
                 `;
             });
         }
+
+        // Setup hard remove demo (Section 12)
+        const hardRemoveSection = document.createElement('section');
+        hardRemoveSection.className = 'demo-section';
+        hardRemoveSection.innerHTML = `
+            <div class="demo-card">
+                <h3>Hard Remove (Permanent Deletion)</h3>
+                <p class="description">
+                    Click the "X" button to permanently remove an item. Unlike soft delete, hard remove cannot be undone.
+                </p>
+
+                <ck-primitive-array
+                    id="hardRemoveDemo"
+                    name="tasks"
+                    items='["Task 1", "Task 2", "Task 3"]'>
+                </ck-primitive-array>
+
+                <div class="output" id="hard-remove-output">
+                    <p><strong>Total Items:</strong> <span id="hard-remove-count">3</span></p>
+                    <p><strong>Items:</strong> <span id="hard-remove-list">Task 1, Task 2, Task 3</span></p>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Click the "X" button on any item to permanently remove it
+                    </p>
+                </div>
+            </div>
+        `;
+
+        // Add section before script tags
+        document.body.querySelector('main')?.appendChild(hardRemoveSection);
+
+        // Setup hard remove demo event listener
+        setTimeout(() => {
+            const hardRemoveDemo = document.getElementById('hardRemoveDemo');
+            const hardRemoveCount = document.getElementById('hard-remove-count');
+            const hardRemoveList = document.getElementById('hard-remove-list');
+
+            if (hardRemoveDemo && hardRemoveCount && hardRemoveList) {
+                hardRemoveDemo.addEventListener('change', (e) => {
+                    const items = e.detail?.items || [];
+                    hardRemoveCount.textContent = items.length;
+                    hardRemoveList.textContent = items.map(item => item.value).join(', ') || '(no items)';
+                });
+            }
+        }, 100);
             element.name = `Dynamic #${counter}`;
             element.color = colors[counter % colors.length];
             element.style.marginBottom = '1rem';
