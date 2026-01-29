@@ -194,7 +194,64 @@ tags[]=react
 tags[]=vue
 ```
 
-Hidden inputs are automatically created and synchronized with visible inputs, enabling standard HTML form submission.
+Hidden inputs are automatically created in the light DOM and synchronized with visible inputs, enabling standard HTML form submission.
+
+##### Tracking Deleted Items
+
+Use `deleted-name` to capture soft-deleted items in form submission:
+
+```html
+<form>
+  <ck-primitive-array 
+    name="active" 
+    deleted-name="removed" 
+    items='["item1","item2"]'>
+  </ck-primitive-array>
+</form>
+```
+
+**Form Data (after soft-deleting item1)**:
+```
+active[]=item2
+removed[]=item1
+```
+
+This enables server-side logic to handle deleted items separately.
+
+##### Input Synchronization
+
+Hidden inputs automatically synchronize with component state across all operations:
+
+**Synchronization Triggers**:
+- ✅ **Initial Load**: When `items` attribute is set initially
+- ✅ **Add**: When new item is added via Add button or `addItem()`
+- ✅ **Edit**: When item value is changed via inline editing
+- ✅ **Soft Delete**: When item is marked as deleted (transitions to `deleted-name`)
+- ✅ **Undo**: When deleted item is restored (transitions back to `name`)
+- ✅ **Hard Remove**: When item is permanently removed (input deleted)
+- ✅ **Attribute Update**: When `items` attribute is re-parsed
+
+**Performance**:
+- Hidden inputs are **reused** on edits (no DOM replacement)
+- Only creates/removes inputs when necessary
+- Efficient Map-based tracking
+
+**Example - Dynamic Updates**:
+```javascript
+const el = document.querySelector('ck-primitive-array');
+
+// Change items attribute → hidden inputs automatically updated
+el.setAttribute('items', '["new1","new2","new3"]');
+
+// Add item → new hidden input created
+el.addItem('new4');
+
+// Edit item → hidden input value synchronized
+// (user types in visible input → hidden input updates automatically)
+```
+
+**Form Submission Always Reflects Current State**:
+Hidden inputs ensure that form submissions always include the current component state, regardless of how items were added, edited, or deleted.
 
 #### Validation
 

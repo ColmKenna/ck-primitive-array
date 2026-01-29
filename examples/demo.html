@@ -628,6 +628,62 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
         <span class="keyword">const</span> values = element.items.map(item => item.value);
         element.<span class="highlight">items</span> = [...values, <span class="string">'New Item'</span>];</code></pre>
         </div>
+
+        <!-- Input Synchronization -->
+        <div class="section">
+            <h2>14. Input Synchronization (Form Integration)</h2>
+            <p>Hidden inputs automatically synchronize with component state for form submission.</p>
+            <p><strong>Try:</strong> Add items, edit values, soft-delete items, then check the form data below.</p>
+
+            <form id="syncForm" style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                <ck-primitive-array
+                    id="syncDemo"
+                    name="tags"
+                    deleted-name="removed-tags"
+                    items='["apple","banana","cherry"]'>
+                </ck-primitive-array>
+                <button type="button" onclick="event.preventDefault(); document.getElementById('syncFormData').textContent = new FormData(document.getElementById('syncForm')).getAll('tags[]').join(', ') || '(none)'; document.getElementById('syncDeletedData').textContent = new FormData(document.getElementById('syncForm')).getAll('removed-tags[]').join(', ') || '(none)';">Show Form Data</button>
+            </form>
+
+            <div style="background: #fff3cd; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                <p style="margin: 0 0 0.5rem 0;"><strong>Active Items (tags[]):</strong> <span id="syncFormData" style="font-family: monospace;">(click Show Form Data)</span></p>
+                <p style="margin: 0;"><strong>Deleted Items (removed-tags[]):</strong> <span id="syncDeletedData" style="font-family: monospace;">(click Show Form Data)</span></p>
+            </div>
+
+            <h3>Synchronization Triggers</h3>
+            <ul style="line-height: 1.8;">
+                <li>✅ <strong>Initial Load</strong>: Hidden inputs created when items attribute is set</li>
+                <li>✅ <strong>Add Operation</strong>: New hidden input created when item is added</li>
+                <li>✅ <strong>Edit Operation</strong>: Hidden input value updated (same DOM node, no replacement)</li>
+                <li>✅ <strong>Soft Delete</strong>: Hidden input name transitions to <code>deleted-name[]</code></li>
+                <li>✅ <strong>Undo</strong>: Hidden input name transitions back to <code>name[]</code></li>
+                <li>✅ <strong>Hard Remove</strong>: Hidden input permanently removed from DOM</li>
+                <li>✅ <strong>Items Attribute Update</strong>: All hidden inputs refreshed to match new items</li>
+            </ul>
+
+            <h3>Example: Items Attribute Re-parse</h3>
+            <div class="controls">
+                <button onclick="document.getElementById('syncDemo').setAttribute('items', JSON.stringify(['red','green','blue']))">Set Items: red, green, blue</button>
+                <button onclick="document.getElementById('syncDemo').setAttribute('items', JSON.stringify(['one','two','three','four']))">Set Items: one, two, three, four</button>
+                <button onclick="document.getElementById('syncDemo').setAttribute('items', '[]')">Clear All Items</button>
+            </div>
+
+            <div style="margin-top: 1rem;">
+                <p style="font-size: 0.9rem; color: #666;"><em>Note: Hidden inputs are in the light DOM (not shadow DOM) so they participate in form submission. Inspect the element to see them!</em></p>
+            </div>
+
+                <pre><code><span class="comment">// Form submission always reflects current state</span>
+<span class="keyword">const</span> form = <span class="keyword">document</span>.querySelector(<span class="string">'form'</span>);
+<span class="keyword">const</span> formData = <span class="keyword">new</span> FormData(form);
+
+<span class="comment">// Get active items</span>
+<span class="keyword">const</span> activeTags = formData.getAll(<span class="string">'tags[]'</span>);
+<span class="keyword">console</span>.log(<span class="string">'Active:'</span>, activeTags);
+
+<span class="comment">// Get soft-deleted items</span>
+<span class="keyword">const</span> deletedTags = formData.getAll(<span class="string">'removed-tags[]'</span>);
+<span class="keyword">console</span>.log(<span class="string">'Deleted:'</span>, deletedTags);</code></pre>
+        </div>
     </div>
 
     <script type="module">

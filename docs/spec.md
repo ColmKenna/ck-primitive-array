@@ -639,6 +639,162 @@ The `data-ckpa-fields` container:
 - Has `style="display: none"` for invisibility
 - Is a direct child of the custom element (light DOM)
 
+---
+
+### Input Synchronization (Phase 3.4)
+
+The component automatically synchronizes hidden inputs with item state across all operations. This ensures form submissions always reflect the current component state.
+
+#### Synchronization Triggers
+
+Hidden inputs are automatically synchronized after:
+
+1. **Initial connection** — When element is inserted into DOM
+2. **Items attribute change** — When `items` attribute is updated
+3. **Add operation** — When item is added via Add button or `addItem()`
+4. **Edit operation** — When item value is changed via inline editing
+5. **Soft delete operation** — When item is soft-deleted (Delete button)
+6. **Undo operation** — When soft-deleted item is restored (Undo button)
+7. **Hard remove operation** — When item is permanently removed (X button)
+8. **Name attribute change** — When `name` or `deleted-name` attributes change
+
+#### Synchronization Behavior
+
+**Initial Items (3.4.1)**:
+```html
+<!-- Initial state -->
+<ck-primitive-array name="tags" items='["a","b"]'></ck-primitive-array>
+
+<!-- After connection -->
+<ck-primitive-array name="tags" items='["a","b"]'>
+  <div data-ckpa-fields>
+    <input type="hidden" name="tags[]" value="a" data-item-id="item-1" />
+    <input type="hidden" name="tags[]" value="b" data-item-id="item-2" />
+  </div>
+</ck-primitive-array>
+```
+
+**Add Operation (3.4.2)**:
+```javascript
+// User clicks Add button → new item created
+// Hidden input automatically created in light DOM
+el.addItem('newItem');
+// → <input type="hidden" name="tags[]" value="newItem" data-item-id="item-3" />
+```
+
+**Edit Operation (3.4.3)**:
+```javascript
+// User types in input → value updates
+// Hidden input value automatically synchronized (same DOM node, no replacement)
+textInput.value = 'edited';
+textInput.dispatchEvent(new Event('input'));
+// → <input type="hidden" name="tags[]" value="edited" data-item-id="item-1" />
+```
+
+**Hard Remove Operation (3.4.4)**:
+```javascript
+// User clicks X button → item permanently removed
+removeButton.click();
+// → Hidden input removed from DOM
+// → hiddenInputsMap.delete(itemId)
+```
+
+**Soft Delete Operation (3.4.5)**:
+```html
+<!-- Before soft delete -->
+<input type="hidden" name="items[]" value="test" data-item-id="item-1" />
+
+<!-- After soft delete (transitions to deleted-name) -->
+<input type="hidden" name="removed[]" value="test" data-item-id="item-1" />
+```
+
+**Undo Operation (3.4.6)**:
+```html
+<!-- Before undo (deleted state) -->
+<input type="hidden" name="removed[]" value="test" data-item-id="item-1" />
+
+<!-- After undo (transitions back to name) -->
+<input type="hidden" name="items[]" value="test" data-item-id="item-1" />
+```
+
+**Items Attribute Re-Parse (3.4.7)**:
+```javascript
+// Initial state: 2 items
+el.setAttribute('items', '["a","b"]');
+// → 2 hidden inputs created
+
+// Update items attribute: 3 new items
+el.setAttribute('items', '["x","y","z"]');
+// → Old inputs removed, 3 new inputs created
+// → <input name="tags[]" value="x" />
+// → <input name="tags[]" value="y" />
+// → <input name="tags[]" value="z" />
+```
+
+#### Implementation Details
+
+**Core Methods**:
+
+1. **`syncHiddenInputs()`**: Main synchronization method
+   - Called automatically after any state-changing operation
+   - Creates new inputs for new items
+   - Updates existing inputs (reuses DOM nodes for performance)
+   - Removes stale inputs for deleted items
+   - Transitions inputs between `name` and `deleted-name` namespaces
+
+2. **`getHiddenInputName(itemState)`**: Determines input name
+   - Returns `{name}[]` for active items (when `name` attribute set)
+   - Returns `{deleted-name}[]` for deleted items (when `deleted-name` attribute set)
+   - Returns `null` when no corresponding name attribute
+
+3. **`ensureFieldsContainer()`**: Creates light DOM container
+   - Idempotent (safe to call multiple times)
+   - Creates `<div data-ckpa-fields>` if not exists
+   - Sets `display: none` for invisibility
+
+**Performance Optimizations**:
+- **Input Reuse**: Existing inputs updated in place (no DOM replacement)
+- **Map-Based Tracking**: `hiddenInputsMap` provides O(1) lookups
+- **Set for Processed IDs**: O(1) checks during cleanup phase
+- **Minimal DOM Operations**: Only creates/removes inputs when necessary
+
+**Memory Management**:
+- Inputs removed from DOM automatically cleaned up by browser
+- `hiddenInputsMap` entries deleted when inputs removed
+- `disconnectedCallback()` cleans up entire container and map
+- No memory leaks or dangling references
+
+#### Form Submission Example
+
+```html
+<form id="myForm">
+  <ck-primitive-array
+    name="tags"
+    deleted-name="removed-tags"
+    items='["keep","delete","remove"]'>
+  </ck-primitive-array>
+  <button type="submit">Submit</button>
+</form>
+
+<script>
+document.getElementById('myForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+
+  // Active items
+  const activeTags = formData.getAll('tags[]');     // ['keep', 'remove']
+
+  // Soft-deleted items
+  const deletedTags = formData.getAll('removed-tags[]'); // ['delete']
+
+  console.log('Active:', activeTags);
+  console.log('Deleted:', deletedTags);
+});
+</script>
+```
+
+---
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -804,7 +960,15 @@ element.setAttribute('color', 'blue');
 75. ✅ Undo triggers change (2.5.9)
 76. ✅ Hard remove triggers change (2.5.10)
 
-**Total**: 82 tests passing
+77. ✅ Initial items create hidden inputs (3.4.1)
+78. ✅ Add creates new hidden input (3.4.2)
+79. ✅ Edit updates hidden input value (3.4.3)
+80. ✅ Hard remove deletes hidden input (3.4.4)
+81. ✅ Soft delete transitions input to deleted-name (3.4.5)
+82. ✅ Undo transitions input back to name (3.4.6)
+83. ✅ Items attribute re-parse refreshes hidden inputs (3.4.7)
+
+**Total**: 107 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

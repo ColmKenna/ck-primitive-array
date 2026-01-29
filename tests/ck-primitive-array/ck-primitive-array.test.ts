@@ -2018,4 +2018,188 @@ describe('CkPrimitiveArray Component', () => {
       document.body.removeChild(el);
     });
   });
+
+  describe('Input Synchronization', () => {
+    test('should create hidden inputs when items attribute and name attribute are set initially', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["a","b"]');
+      document.body.appendChild(el);
+
+      const inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(2);
+      expect((inputs[0] as HTMLInputElement).value).toBe('a');
+      expect((inputs[1] as HTMLInputElement).value).toBe('b');
+      expect((inputs[0] as HTMLInputElement).name).toBe('tags[]');
+      expect((inputs[1] as HTMLInputElement).name).toBe('tags[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('should create new hidden input when item is added', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      // Verify initial state
+      let inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(1);
+
+      // Add a new item
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      // Verify new hidden input was created
+      inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(2);
+      expect((inputs[1] as HTMLInputElement).name).toBe('tags[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('should update hidden input value when item is edited', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["original"]');
+      document.body.appendChild(el);
+
+      const hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(hiddenInput.value).toBe('original');
+
+      // Edit the input
+      const textInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      textInput.value = 'edited';
+      textInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // Verify hidden input was updated
+      expect(hiddenInput.value).toBe('edited');
+
+      document.body.removeChild(el);
+    });
+
+    test('should delete hidden input when item is permanently removed', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["a","b","c"]');
+      document.body.appendChild(el);
+
+      // Verify initial state
+      let inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(3);
+
+      // Remove middle item
+      const removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      (removeButtons?.[1] as HTMLButtonElement).click();
+
+      // Verify hidden input was removed
+      inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(2);
+      expect((inputs[0] as HTMLInputElement).value).toBe('a');
+      expect((inputs[1] as HTMLInputElement).value).toBe('c');
+
+      document.body.removeChild(el);
+    });
+
+    test('should transition hidden input to deleted-name when item is soft-deleted', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      el.setAttribute('deleted-name', 'removed');
+      el.setAttribute('items', '["test"]');
+      document.body.appendChild(el);
+
+      // Verify initial state
+      let hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(hiddenInput.name).toBe('items[]');
+      expect(hiddenInput.value).toBe('test');
+
+      // Soft delete the item
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // Verify hidden input name changed to deleted-name
+      hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(hiddenInput.name).toBe('removed[]');
+      expect(hiddenInput.value).toBe('test');
+
+      document.body.removeChild(el);
+    });
+
+    test('should transition hidden input back to name when soft-deleted item is restored', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      el.setAttribute('deleted-name', 'removed');
+      el.setAttribute('items', '["test"]');
+      document.body.appendChild(el);
+
+      // Soft delete the item
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // Verify it's in deleted state
+      let hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(hiddenInput.name).toBe('removed[]');
+
+      // Undo (restore the item)
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      undoBtn.click();
+
+      // Verify hidden input name changed back to name
+      hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(hiddenInput.name).toBe('items[]');
+      expect(hiddenInput.value).toBe('test');
+
+      document.body.removeChild(el);
+    });
+
+    test('should refresh hidden inputs when items attribute is updated', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["a","b"]');
+      document.body.appendChild(el);
+
+      // Verify initial state
+      let inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(2);
+      expect((inputs[0] as HTMLInputElement).value).toBe('a');
+      expect((inputs[1] as HTMLInputElement).value).toBe('b');
+
+      // Update items attribute
+      el.setAttribute('items', '["x","y","z"]');
+
+      // Verify hidden inputs reflect new items
+      inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(3);
+      expect((inputs[0] as HTMLInputElement).value).toBe('x');
+      expect((inputs[1] as HTMLInputElement).value).toBe('y');
+      expect((inputs[2] as HTMLInputElement).value).toBe('z');
+      expect((inputs[0] as HTMLInputElement).name).toBe('tags[]');
+      expect((inputs[1] as HTMLInputElement).name).toBe('tags[]');
+      expect((inputs[2] as HTMLInputElement).name).toBe('tags[]');
+
+      document.body.removeChild(el);
+    });
+  });
 });
