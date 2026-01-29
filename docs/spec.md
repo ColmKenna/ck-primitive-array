@@ -20,13 +20,14 @@ The `CkPrimitiveArray` is a web component that displays a greeting message with 
 
 ### Attributes
 
-| Attribute | Type   | Default | Description                |
-|-----------|--------|---------|----------------------------|
-| `name`    | string | "World" | Name to display in greeting |
-| `color`   | string | "#333"  | Text color for the message  |
-| `items`   | JSON   | `[]`    | JSON array of primitive values to display as items |
-| `readonly`| boolean| –       | When present, disables the Add button |
-| `disabled`| boolean| –       | When present, disables the Add button |
+| Attribute     | Type   | Default | Description                |
+|---------------|--------|---------|----------------------------|
+| `name`        | string | –       | Name for active items' hidden inputs (e.g., `name[]`) |
+| `deleted-name`| string | –       | Name for deleted items' hidden inputs (e.g., `deleted-name[]`) |
+| `color`       | string | "#333"  | Text color for the message  |
+| `items`       | JSON   | `[]`    | JSON array of primitive values to display as items |
+| `readonly`    | boolean| –       | When present, disables the Add button |
+| `disabled`    | boolean| –       | When present, disables the Add button |
 
 ### Properties
 
@@ -125,21 +126,28 @@ el.addEventListener('change', (e) => {
 
 #### Form Integration (Hidden Inputs)
 
-When the `name` attribute is set, each item creates a hidden input for form submission:
+When the `name` attribute is set, hidden inputs are created in the light DOM for form submission:
 
 ```html
 <ck-primitive-array name="tags" items='["a","b"]'></ck-primitive-array>
 
-<!-- Renders hidden inputs: -->
-<input type="hidden" name="tags[]" value="a" />
-<input type="hidden" name="tags[]" value="b" />
+<!-- Light DOM structure: -->
+<ck-primitive-array name="tags" items='["a","b"]'>
+  <div data-ckpa-fields>
+    <input type="hidden" name="tags[]" value="a" />
+    <input type="hidden" name="tags[]" value="b" />
+  </div>
+</ck-primitive-array>
 ```
 
 **Behavior**:
-- Hidden input created only if `name` attribute present
-- Hidden input name: `{name}[]` (array notation for server-side)
-- Hidden input value updates in sync with text input
+- Hidden inputs placed in light DOM container with `data-ckpa-fields` attribute
+- Active items use `{name}[]` format (array notation for server-side)
+- Deleted items use `{deleted-name}[]` format if `deleted-name` attribute is set
+- Hidden inputs are reused on edits to reduce DOM churn
 - Enables standard HTML form submission
+- Empty or missing `name` attribute means no hidden inputs for active items
+- Empty or missing `deleted-name` attribute means no hidden inputs for deleted items
 
 #### Accessibility (ARIA)
 
@@ -558,6 +566,78 @@ el.addEventListener('change', (e) => {
     .forEach(item => console.log(item.id, item.value));
 });
 ```
+
+### Form Participation (Phase 3)
+
+The component fully participates in HTML forms by generating hidden inputs in the light DOM for form submission.
+
+#### Light DOM Hidden Inputs
+
+Hidden inputs are placed in the element's light DOM (not shadow DOM) to ensure form participation:
+
+```html
+<form>
+  <ck-primitive-array name="tags" deleted-name="removed" items='["a","b"]'>
+    <!-- Light DOM container created automatically -->
+    <div data-ckpa-fields style="display: none;">
+      <input type="hidden" name="tags[]" value="a" />
+      <input type="hidden" name="tags[]" value="b" />
+    </div>
+  </ck-primitive-array>
+  <button type="submit">Submit</button>
+</form>
+```
+
+#### Name Attribute
+
+The `name` attribute controls hidden inputs for **active** items:
+
+| `name` Value | Hidden Input Name | Behavior |
+|--------------|-------------------|----------|
+| `"items"` | `items[]` | Array notation for server-side |
+| `"my-items"` | `my-items[]` | Special characters preserved |
+| `""` (empty) | – | No hidden inputs created |
+| Not set | – | No hidden inputs created |
+
+#### Deleted-Name Attribute
+
+The `deleted-name` attribute controls hidden inputs for **soft-deleted** items:
+
+| `deleted-name` Value | Hidden Input Name | Behavior |
+|---------------------|-------------------|----------|
+| `"removed"` | `removed[]` | Deleted items use this name |
+| Not set | – | No hidden inputs for deleted items |
+
+**Example with both attributes:**
+```html
+<ck-primitive-array 
+  name="items" 
+  deleted-name="removed" 
+  items='["active"]'>
+</ck-primitive-array>
+
+<!-- Active item creates: -->
+<input type="hidden" name="items[]" value="active" />
+
+<!-- After soft-delete: -->
+<input type="hidden" name="removed[]" value="active" />
+```
+
+#### Input Reuse for Performance
+
+Hidden inputs are **reused** on edits to reduce DOM churn:
+
+- Same DOM node updated when item value changes
+- No input replacement on edit operations
+- Efficient for frequent typing updates
+
+#### Container Structure
+
+The `data-ckpa-fields` container:
+- Is created automatically on `connectedCallback()`
+- Contains all hidden inputs (both active and deleted)
+- Has `style="display: none"` for invisibility
+- Is a direct child of the custom element (light DOM)
 
 ### Lifecycle Callbacks
 

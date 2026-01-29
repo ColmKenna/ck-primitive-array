@@ -891,8 +891,8 @@ describe('CkPrimitiveArray Component', () => {
       const input = el.shadowRoot?.querySelector(
         'input[type="text"]'
       ) as HTMLInputElement;
-      const hiddenInput = el.shadowRoot?.querySelector(
-        'input[type="hidden"]'
+      const hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input[type="hidden"]'
       ) as HTMLInputElement;
 
       // Hidden input should exist
@@ -1110,6 +1110,7 @@ describe('CkPrimitiveArray Component', () => {
     test('Hidden input moves to deleted-name', () => {
       const el = new CkPrimitiveArray();
       el.setAttribute('name', 'myfield');
+      el.setAttribute('deleted-name', 'deleted-myfield');
       el.setAttribute('items', '["test item"]');
       document.body.appendChild(el);
 
@@ -1118,8 +1119,8 @@ describe('CkPrimitiveArray Component', () => {
       ) as HTMLButtonElement;
       deleteBtn.click();
 
-      const hiddenInput = el.shadowRoot?.querySelector(
-        'input[type="hidden"]'
+      const hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input[type="hidden"]'
       ) as HTMLInputElement;
       expect(hiddenInput.name).toBe('deleted-myfield[]');
 
@@ -1267,6 +1268,7 @@ describe('CkPrimitiveArray Component', () => {
     test('Hidden input moves back to name', () => {
       const el = new CkPrimitiveArray();
       el.setAttribute('name', 'myfield');
+      el.setAttribute('deleted-name', 'deleted-myfield');
       el.setAttribute('items', '["test item"]');
       document.body.appendChild(el);
 
@@ -1277,8 +1279,8 @@ describe('CkPrimitiveArray Component', () => {
       deleteBtn.click();
 
       // Verify it's in deleted state
-      let hiddenInput = el.shadowRoot?.querySelector(
-        'input[type="hidden"]'
+      let hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input[type="hidden"]'
       ) as HTMLInputElement;
       expect(hiddenInput.name).toBe('deleted-myfield[]');
 
@@ -1289,8 +1291,8 @@ describe('CkPrimitiveArray Component', () => {
       undoBtn.click();
 
       // Verify it's back to normal
-      hiddenInput = el.shadowRoot?.querySelector(
-        'input[type="hidden"]'
+      hiddenInput = el.querySelector(
+        '[data-ckpa-fields] input[type="hidden"]'
       ) as HTMLInputElement;
       expect(hiddenInput.name).toBe('myfield[]');
 
@@ -1424,8 +1426,8 @@ describe('CkPrimitiveArray Component', () => {
       document.body.appendChild(el);
 
       // Verify 3 hidden inputs exist
-      let hiddenInputs = el.shadowRoot?.querySelectorAll(
-        'input[type="hidden"]'
+      let hiddenInputs = el.querySelectorAll(
+        '[data-ckpa-fields] input[type="hidden"]'
       );
       expect(hiddenInputs?.length).toBe(3);
 
@@ -1436,7 +1438,9 @@ describe('CkPrimitiveArray Component', () => {
       (removeButtons?.[1] as HTMLButtonElement).click();
 
       // Verify only 2 hidden inputs remain
-      hiddenInputs = el.shadowRoot?.querySelectorAll('input[type="hidden"]');
+      hiddenInputs = el.querySelectorAll(
+        '[data-ckpa-fields] input[type="hidden"]'
+      );
       expect(hiddenInputs?.length).toBe(2);
 
       document.body.removeChild(el);
@@ -1700,6 +1704,317 @@ describe('CkPrimitiveArray Component', () => {
       expect(handler).toHaveBeenCalledTimes(1);
 
       el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Form Participation - Hidden Input Generation', () => {
+    test('light DOM container exists with data-ckpa-fields attribute', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      expect(container).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('hidden inputs created for items when name attribute set', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const inputs = container?.querySelectorAll('input');
+      expect(inputs?.length).toBe(2);
+
+      document.body.removeChild(el);
+    });
+
+    test('hidden inputs have type="hidden"', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const inputs = Array.from(container?.querySelectorAll('input') || []);
+      inputs.forEach(input => {
+        expect(input.type).toBe('hidden');
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('hidden inputs have correct values', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const inputs = Array.from(
+        container?.querySelectorAll('input') || []
+      ) as HTMLInputElement[];
+      expect(inputs[0].value).toBe('a');
+      expect(inputs[1].value).toBe('b');
+
+      document.body.removeChild(el);
+    });
+
+    test('no hidden inputs created without name attribute', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const inputs = container?.querySelectorAll('input');
+      expect(inputs?.length ?? 0).toBe(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('should reuse hidden inputs on edit to reduce DOM churn', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const originalInput = container?.querySelector('input');
+      const originalReference = originalInput;
+
+      const textInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      textInput.value = 'b';
+      textInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const updatedInput = container?.querySelector('input');
+      expect(updatedInput).toBe(originalReference); // Same DOM node
+      expect(updatedInput?.value).toBe('b');
+
+      document.body.removeChild(el);
+    });
+
+    test('container is in light DOM adjacent to shadow host', () => {
+      const wrapper = document.createElement('div');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      wrapper.appendChild(el);
+      document.body.appendChild(wrapper);
+
+      // Container should be a child of the element itself (light DOM)
+      const container = el.querySelector('[data-ckpa-fields]');
+      expect(container).toBeTruthy();
+      expect(container?.parentElement).toBe(el);
+
+      document.body.removeChild(wrapper);
+    });
+
+    test('all hidden inputs are inside container', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b","c"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const inputsInContainer = container?.querySelectorAll('input');
+      const allInputsInLightDom = el.querySelectorAll('input');
+
+      expect(inputsInContainer?.length).toBe(allInputsInLightDom.length);
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Form Participation - Name Attribute', () => {
+    test('active items use name[] format', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      const input = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(input.name).toBe('items[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('name change updates hidden inputs', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      el.setAttribute('name', 'new');
+
+      const input = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(input.name).toBe('new[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('name removal removes hidden inputs', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      el.removeAttribute('name');
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const inputs = container?.querySelectorAll('input');
+      expect(inputs?.length ?? 0).toBe(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('empty name treated as no name', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', '');
+      document.body.appendChild(el);
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const inputs = container?.querySelectorAll('input');
+      expect(inputs?.length ?? 0).toBe(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('special characters in name preserved', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'my-items');
+      document.body.appendChild(el);
+
+      const input = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(input.name).toBe('my-items[]');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Form Participation - Deleted-Name Attribute', () => {
+    test('deleted items use deleted-name[] format', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      el.setAttribute('deleted-name', 'removed');
+      document.body.appendChild(el);
+
+      // Soft delete the item
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const input = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(input.name).toBe('removed[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('no deleted inputs without deleted-name attribute', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      document.body.appendChild(el);
+
+      // Soft delete the item
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const container = el.querySelector('[data-ckpa-fields]');
+      const inputs = container?.querySelectorAll('input');
+      expect(inputs?.length ?? 0).toBe(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('deleted-name change updates hidden inputs', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      el.setAttribute('deleted-name', 'removed');
+      document.body.appendChild(el);
+
+      // Soft delete the item
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      el.setAttribute('deleted-name', 'trashed');
+
+      const input = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(input.name).toBe('trashed[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('soft delete moves hidden input from name to deleted-name', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      el.setAttribute('deleted-name', 'removed');
+      document.body.appendChild(el);
+
+      // Before delete - should use name[]
+      let input = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(input.name).toBe('items[]');
+
+      // Soft delete
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      // After delete - should use deleted-name[]
+      input = el.querySelector('[data-ckpa-fields] input') as HTMLInputElement;
+      expect(input.name).toBe('removed[]');
+
+      document.body.removeChild(el);
+    });
+
+    test('undo moves hidden input back from deleted-name to name', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('name', 'items');
+      el.setAttribute('deleted-name', 'removed');
+      document.body.appendChild(el);
+
+      // Soft delete then undo
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click(); // delete
+      deleteBtn.click(); // undo
+
+      const input = el.querySelector(
+        '[data-ckpa-fields] input'
+      ) as HTMLInputElement;
+      expect(input.name).toBe('items[]');
+
       document.body.removeChild(el);
     });
   });

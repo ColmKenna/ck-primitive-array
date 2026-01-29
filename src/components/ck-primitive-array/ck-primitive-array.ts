@@ -17,6 +17,8 @@ export class CkPrimitiveArray extends HTMLElement {
     [];
   private nextItemId = 0;
   private lastItemsAttribute: string | null = null;
+  private fieldsContainer: HTMLDivElement | null = null;
+  private hiddenInputsMap: Map<string, HTMLInputElement> = new Map();
 
   constructor() {
     super();
@@ -39,6 +41,7 @@ export class CkPrimitiveArray extends HTMLElement {
   }
 
   connectedCallback() {
+    this.ensureFieldsContainer();
     this.render();
   }
 
@@ -55,10 +58,17 @@ export class CkPrimitiveArray extends HTMLElement {
     this.addButton = null;
     this.listElement = null;
     this.placeholderElement = null;
+    
+    // Cleanup light DOM fields container
+    if (this.fieldsContainer && this.fieldsContainer.parentNode) {
+      this.fieldsContainer.parentNode.removeChild(this.fieldsContainer);
+    }
+    this.fieldsContainer = null;
+    this.hiddenInputsMap.clear();
   }
 
   static get observedAttributes() {
-    return ['name', 'color', 'items', 'readonly', 'disabled'];
+    return ['name', 'color', 'items', 'readonly', 'disabled', 'deleted-name'];
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -126,6 +136,66 @@ export class CkPrimitiveArray extends HTMLElement {
         error
       );
       return null; // Return null to signal error
+    }
+  }
+
+  private ensureFieldsContainer() {
+    if (!this.fieldsContainer) {
+      this.fieldsContainer = document.createElement('div');
+      this.fieldsContainer.setAttribute('data-ckpa-fields', '');
+      this.fieldsContainer.style.display = 'none';
+      this.appendChild(this.fieldsContainer);
+    }
+  }
+
+  private getHiddenInputName(itemState: { deleted: boolean }): string | null {
+    const formName = this.getAttribute('name');
+    const deletedName = this.getAttribute('deleted-name');
+
+    if (itemState.deleted) {
+      return deletedName ? `${deletedName}[]` : null;
+    } else {
+      return formName ? `${formName}[]` : null;
+    }
+  }
+
+  private syncHiddenInputs() {
+    this.ensureFieldsContainer();
+    if (!this.fieldsContainer) return;
+
+    const processedIds = new Set<string>();
+
+    for (const itemState of this.itemsState) {
+      const inputName = this.getHiddenInputName(itemState);
+      
+      if (inputName) {
+        let input = this.hiddenInputsMap.get(itemState.id);
+        if (!input) {
+          input = document.createElement('input');
+          input.type = 'hidden';
+          input.setAttribute('data-item-id', itemState.id);
+          this.fieldsContainer.appendChild(input);
+          this.hiddenInputsMap.set(itemState.id, input);
+        }
+        input.name = inputName;
+        input.value = itemState.value;
+        processedIds.add(itemState.id);
+      } else {
+        // No name for this item - remove if exists
+        const existingInput = this.hiddenInputsMap.get(itemState.id);
+        if (existingInput) {
+          existingInput.remove();
+          this.hiddenInputsMap.delete(itemState.id);
+        }
+      }
+    }
+
+    // Remove inputs for items that no longer exist
+    for (const [id, input] of this.hiddenInputsMap) {
+      if (!processedIds.has(id) && !this.itemsState.find(i => i.id === id)) {
+        input.remove();
+        this.hiddenInputsMap.delete(id);
+      }
     }
   }
 
@@ -230,6 +300,9 @@ export class CkPrimitiveArray extends HTMLElement {
       this.syncItemsFromAttribute();
       this.renderItems();
     }
+
+    // Sync hidden inputs for form participation
+    this.syncHiddenInputs();
   }
 
   private createItemRow(itemState: {
@@ -262,31 +335,14 @@ export class CkPrimitiveArray extends HTMLElement {
       input.disabled = true;
     }
 
-    // Create hidden input for form integration if name attribute is set
-    let hiddenInput: HTMLInputElement | null = null;
-    const formName = this.getAttribute('name');
-    if (formName) {
-      hiddenInput = document.createElement('input');
-      hiddenInput.type = 'hidden';
-      // Use deleted-name[] for soft-deleted items
-      if (itemState.deleted) {
-        hiddenInput.name = `deleted-${formName}[]`;
-      } else {
-        hiddenInput.name = `${formName}[]`;
-      }
-      hiddenInput.value = itemState.value;
-    }
-
     input.addEventListener('input', () => {
       itemState.value = input.value;
 
       // Update aria-label
       input.setAttribute('aria-label', `Item: ${input.value}`);
 
-      // Update hidden input if it exists
-      if (hiddenInput) {
-        hiddenInput.value = input.value;
-      }
+      // Update hidden input in light DOM
+      this.syncHiddenInputs();
 
       // Validation: mark as invalid if empty
       if (input.value === '') {
@@ -337,14 +393,8 @@ export class CkPrimitiveArray extends HTMLElement {
       // Update input disabled state
       input.disabled = itemState.deleted;
       
-      // Update hidden input name if it exists
-      if (hiddenInput && formName) {
-        if (itemState.deleted) {
-          hiddenInput.name = `deleted-${formName}[]`;
-        } else {
-          hiddenInput.name = `${formName}[]`;
-        }
-      }
+      // Sync hidden inputs in light DOM
+      this.syncHiddenInputs();
       
       // Focus the button after toggle
       deleteButton.focus();
@@ -379,6 +429,13 @@ export class CkPrimitiveArray extends HTMLElement {
         this.itemsState.splice(index, 1);
       }
 
+      // Remove hidden input from light DOM
+      const hiddenInput = this.hiddenInputsMap.get(itemState.id);
+      if (hiddenInput) {
+        hiddenInput.remove();
+        this.hiddenInputsMap.delete(itemState.id);
+      }
+
       // Remove from DOM
       itemRow.remove();
 
@@ -409,9 +466,6 @@ export class CkPrimitiveArray extends HTMLElement {
     });
 
     itemRow.appendChild(input);
-    if (hiddenInput) {
-      itemRow.appendChild(hiddenInput);
-    }
     itemRow.appendChild(deleteButton);
     itemRow.appendChild(removeButton);
 
@@ -465,6 +519,9 @@ export class CkPrimitiveArray extends HTMLElement {
     const row = this.createItemRow(newItem);
     this.listElement.appendChild(row);
     this.updatePlaceholder();
+
+    // Sync hidden inputs for form participation
+    this.syncHiddenInputs();
 
     // Focus the new input
     const input = row.querySelector('input') as HTMLInputElement | null;

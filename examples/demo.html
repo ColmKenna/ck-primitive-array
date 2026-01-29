@@ -486,6 +486,28 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
                     </p>
                 </div>
                 <div class="demo-item">
+                    <h3>Form Participation with deleted-name</h3>
+                    <form id="formParticipationDemo" style="display: inline-block; width: 100%;">
+                        <ck-primitive-array
+                            id="formParticipationArray"
+                            name="active"
+                            deleted-name="removed"
+                            items='["Task A","Task B"]'
+                            color="#8e44ad">
+                        </ck-primitive-array>
+                        <button type="submit" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: #8e44ad; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Submit Form
+                        </button>
+                    </form>
+                    <div id="formParticipationOutput" style="margin-top: 0.5rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 0.8rem;">
+                        <strong>active[]:</strong> Task A, Task B<br>
+                        <strong>removed[]:</strong> (none)
+                    </div>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Soft-delete an item to see it move from "active[]" to "removed[]"
+                    </p>
+                </div>
+                <div class="demo-item">
                     <h3>Validation (Empty Values)</h3>
                     <style>
                         .ck-primitive-array__item.has-error input {
@@ -676,6 +698,31 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
                     <strong>Total:</strong> ${e.detail?.items.length} item(s)
                 `;
             });
+        }
+
+        // Setup form participation demo
+        const formParticipationArray = document.getElementById('formParticipationArray');
+        const formParticipationOutput = document.getElementById('formParticipationOutput');
+        const formParticipationDemo = document.getElementById('formParticipationDemo');
+        if (formParticipationArray && formParticipationOutput) {
+            formParticipationArray.addEventListener('change', (e) => {
+                const active = e.detail?.active || [];
+                const deleted = e.detail?.deleted || [];
+                formParticipationOutput.innerHTML = `
+                    <strong>active[]:</strong> ${active.length > 0 ? active.join(', ') : '(none)'}<br>
+                    <strong>removed[]:</strong> ${deleted.length > 0 ? deleted.join(', ') : '(none)'}
+                `;
+            });
+            
+            if (formParticipationDemo) {
+                formParticipationDemo.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(formParticipationDemo);
+                    const activeItems = formData.getAll('active[]');
+                    const removedItems = formData.getAll('removed[]');
+                    alert(`Form submitted!\n\nactive[]: ${activeItems.join(', ') || '(none)'}\nremoved[]: ${removedItems.join(', ') || '(none)'}`);
+                });
+            }
         }
 
         // Setup hard remove demo (Section 12)
