@@ -409,6 +409,156 @@ The hidden input for the removed item is removed from the DOM, ensuring form sub
 - **Keyboard navigation**: Add button receives focus for quick replacement
 - **Screen readers**: Updated ARIA labels announced on focus
 
+---
+
+### Change Events (Phase 2.5)
+
+The component dispatches `change` CustomEvents whenever item state changes, enabling reactive UIs and form integration.
+
+#### Event Structure
+
+All change events follow this structure:
+
+```javascript
+{
+  type: 'change',
+  bubbles: true,  // Propagates to parent elements
+  detail: {
+    items: Array<{id: string, value: string, deleted: boolean}>,
+    active: Array<string>,   // Values only (not objects)
+    deleted: Array<string>   // Values only (not objects)
+  }
+}
+```
+
+**Breaking Change (v2.5)**: Prior to v2.5, `detail.active` and `detail.deleted` returned arrays of objects. They now return arrays of string values for simplified consumption.
+
+#### Event Properties
+
+##### `detail.items`
+- **Type**: `Array<{id: string, value: string, deleted: boolean}>`
+- **Contains**: All items (both active and soft-deleted)
+- **Purpose**: Full state snapshot for advanced use cases
+
+##### `detail.active`
+- **Type**: `Array<string>`
+- **Contains**: Values of non-deleted items only
+- **Purpose**: Quick access to active item values
+- **Example**: `['apple', 'banana', 'cherry']`
+
+##### `detail.deleted`
+- **Type**: `Array<string>`
+- **Contains**: Values of soft-deleted items only
+- **Purpose**: Track items pending permanent removal
+- **Example**: `['old-item']`
+
+#### When Events Fire
+
+Change events are dispatched after:
+
+1. **Item added** (via Add button or `addItem()`)
+2. **Item edited** (inline text input change)
+3. **Item soft deleted** (Delete button click)
+4. **Item restored** (Undo button click)
+5. **Item hard removed** (Remove button click)
+
+#### Event Timing
+
+Events fire **after DOM updates complete**, ensuring the component state is consistent:
+
+```javascript
+el.addEventListener('change', (e) => {
+  // DOM is already updated
+  const rowCount = el.shadowRoot.querySelectorAll('[role="listitem"]').length;
+  console.log('Rows in DOM:', rowCount);  // Matches e.detail.items.length
+});
+```
+
+#### Event Bubbling
+
+Events bubble up the DOM tree, enabling event delegation:
+
+```javascript
+// Listen on parent element
+document.body.addEventListener('change', (e) => {
+  if (e.target.tagName === 'CK-PRIMITIVE-ARRAY') {
+    console.log('Items changed:', e.detail.active);
+  }
+});
+```
+
+#### Usage Examples
+
+**Basic listening:**
+```javascript
+const el = document.querySelector('ck-primitive-array');
+
+el.addEventListener('change', (e) => {
+  console.log('Active items:', e.detail.active);      // ['a', 'b']
+  console.log('Deleted items:', e.detail.deleted);    // ['old']
+  console.log('Total items:', e.detail.items.length); // 3
+});
+```
+
+**Form submission:**
+```javascript
+el.addEventListener('change', (e) => {
+  // Submit only active items to server
+  fetch('/api/items', {
+    method: 'POST',
+    body: JSON.stringify({ items: e.detail.active })
+  });
+});
+```
+
+**React integration:**
+```javascript
+function ItemList() {
+  const handleChange = (e) => {
+    setItems(e.detail.active);
+  };
+
+  return <ck-primitive-array onChange={handleChange} />;
+}
+```
+
+**Review workflow:**
+```javascript
+el.addEventListener('change', (e) => {
+  // Show deleted items for review before permanent removal
+  if (e.detail.deleted.length > 0) {
+    showReviewDialog(e.detail.deleted);
+  }
+});
+```
+
+#### Migration from v2.4 to v2.5
+
+If upgrading from a version before v2.5:
+
+**Before (v2.4):**
+```javascript
+el.addEventListener('change', (e) => {
+  e.detail.active.forEach(item => {
+    console.log(item.value);  // Object with {id, value, deleted}
+  });
+});
+```
+
+**After (v2.5):**
+```javascript
+el.addEventListener('change', (e) => {
+  e.detail.active.forEach(value => {
+    console.log(value);  // String value directly
+  });
+
+  // Or access full objects via detail.items:
+  e.detail.items
+    .filter(item => !item.deleted)
+    .forEach(item => console.log(item.id, item.value));
+});
+```
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -563,7 +713,18 @@ element.setAttribute('color', 'blue');
 65. ✅ Hidden input is removed (2.4.5)
 66. ✅ Other items' indices update (2.4.6)
 
-**Total**: 72 tests passing
+67. ✅ Event bubbles to parent (2.5.1)
+68. ✅ detail.items contains all items (2.5.2)
+69. ✅ detail.active contains string values (2.5.3)
+70. ✅ detail.deleted contains string values (2.5.4)
+71. ✅ Event fires after DOM updates (2.5.5)
+72. ✅ Add triggers change (2.5.6)
+73. ✅ Edit triggers change (2.5.7)
+74. ✅ Soft delete triggers change (2.5.8)
+75. ✅ Undo triggers change (2.5.9)
+76. ✅ Hard remove triggers change (2.5.10)
+
+**Total**: 82 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

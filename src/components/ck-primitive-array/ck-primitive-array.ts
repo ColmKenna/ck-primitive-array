@@ -351,9 +351,9 @@ export class CkPrimitiveArray extends HTMLElement {
       
       // Dispatch change event with separate active/deleted arrays
       const allItems = this.items;
-      const activeItems = allItems.filter(item => !item.deleted);
-      const deletedItems = allItems.filter(item => item.deleted);
-      
+      const activeItems = allItems.filter(item => !item.deleted).map(item => item.value);
+      const deletedItems = allItems.filter(item => item.deleted).map(item => item.value);
+
       this.dispatchEvent(
         new CustomEvent('change', {
           bubbles: true,
@@ -393,8 +393,8 @@ export class CkPrimitiveArray extends HTMLElement {
 
       // Dispatch change event
       const allItems = this.items;
-      const activeItems = allItems.filter(item => !item.deleted);
-      const deletedItems = allItems.filter(item => item.deleted);
+      const activeItems = allItems.filter(item => !item.deleted).map(item => item.value);
+      const deletedItems = allItems.filter(item => item.deleted).map(item => item.value);
 
       this.dispatchEvent(
         new CustomEvent('change', {

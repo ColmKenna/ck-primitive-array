@@ -1095,13 +1095,13 @@ describe('CkPrimitiveArray Component', () => {
       const event = handler.mock.calls[0][0] as {
         detail: {
           items: Array<{ id: string; value: string; deleted: boolean }>;
-          active?: Array<{ id: string; value: string; deleted: boolean }>;
-          deleted?: Array<{ id: string; value: string; deleted: boolean }>;
+          active?: string[];
+          deleted?: string[];
         };
       };
       expect(event.detail.deleted).toBeDefined();
       expect(event.detail.deleted).toHaveLength(1);
-      expect(event.detail.deleted![0].value).toBe('test item');
+      expect(event.detail.deleted![0]).toBe('test item');
 
       el.removeEventListener('change', handler);
       document.body.removeChild(el);
@@ -1252,13 +1252,13 @@ describe('CkPrimitiveArray Component', () => {
       const event = handler.mock.calls[0][0] as {
         detail: {
           items: Array<{ id: string; value: string; deleted: boolean }>;
-          active?: Array<{ id: string; value: string; deleted: boolean }>;
-          deleted?: Array<{ id: string; value: string; deleted: boolean }>;
+          active?: string[];
+          deleted?: string[];
         };
       };
       expect(event.detail.active).toBeDefined();
       expect(event.detail.active).toHaveLength(1);
-      expect(event.detail.active![0].value).toBe('test item');
+      expect(event.detail.active![0]).toBe('test item');
 
       el.removeEventListener('change', handler);
       document.body.removeChild(el);
@@ -1467,6 +1467,239 @@ describe('CkPrimitiveArray Component', () => {
         (inputs?.[1] as HTMLInputElement).getAttribute('aria-label')
       ).toMatch(/Item.*[2c]/i);
 
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Change Event', () => {
+    test('should bubble to parent elements', () => {
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+
+      const el = new CkPrimitiveArray();
+      container.appendChild(el);
+
+      const handler = jest.fn();
+      container.addEventListener('change', handler);
+
+      // Trigger change by adding item
+      el.addItem('test');
+
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      container.removeEventListener('change', handler);
+      document.body.removeChild(container);
+    });
+
+    test('should include all items in detail.items', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      // Soft delete one item
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      deleteBtn.click();
+
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          items: Array<{ id: string; value: string; deleted: boolean }>;
+        };
+      };
+
+      // Should have both items (1 active, 1 deleted)
+      expect(event.detail.items.length).toBe(2);
+      expect(event.detail.items[0].deleted).toBe(true);
+      expect(event.detail.items[1].deleted).toBe(false);
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should include active values as strings in detail.active', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["active1", "active2", "will-delete"]');
+      document.body.appendChild(el);
+
+      // Soft delete the third item
+      const deleteButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="delete"]'
+      );
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      (deleteButtons?.[2] as HTMLButtonElement).click();
+
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          active: string[];
+        };
+      };
+
+      // active should be an array of strings
+      expect(Array.isArray(event.detail.active)).toBe(true);
+      expect(event.detail.active.length).toBe(2);
+      expect(event.detail.active[0]).toBe('active1');
+      expect(event.detail.active[1]).toBe('active2');
+      expect(typeof event.detail.active[0]).toBe('string');
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should include deleted values as strings in detail.deleted', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["active", "delete1", "delete2"]');
+      document.body.appendChild(el);
+
+      const deleteButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="delete"]'
+      );
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      // Delete second and third items
+      (deleteButtons?.[1] as HTMLButtonElement).click();
+      (deleteButtons?.[2] as HTMLButtonElement).click();
+
+      const event = handler.mock.calls[1][0] as {
+        detail: {
+          deleted: string[];
+        };
+      };
+
+      // deleted should be an array of strings
+      expect(Array.isArray(event.detail.deleted)).toBe(true);
+      expect(event.detail.deleted.length).toBe(2);
+      expect(event.detail.deleted[0]).toBe('delete1');
+      expect(event.detail.deleted[1]).toBe('delete2');
+      expect(typeof event.detail.deleted[0]).toBe('string');
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should fire after DOM updates complete', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      let domStateAtEvent: number | null = null;
+
+      el.addEventListener('change', () => {
+        const rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+        domStateAtEvent = rows?.length ?? 0;
+      });
+
+      // Add an item
+      el.addItem('test');
+
+      // DOM should already be updated when event fires
+      expect(domStateAtEvent).toBe(1);
+
+      document.body.removeChild(el);
+    });
+
+    test('should dispatch change event when item added', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      el.addItem('new item');
+
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should dispatch change event when item edited', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["original"]');
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'edited';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should dispatch change event when item soft deleted', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["item"]');
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should dispatch change event when delete undone', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["item"]');
+      document.body.appendChild(el);
+
+      // First delete
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      // Then undo
+      const undoBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      undoBtn.click();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('should dispatch change event when item hard removed', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["item"]');
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const removeBtn = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeBtn.click();
+
+      expect(handler).toHaveBeenCalledTimes(1);
+
+      el.removeEventListener('change', handler);
       document.body.removeChild(el);
     });
   });

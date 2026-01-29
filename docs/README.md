@@ -407,6 +407,140 @@ For permanent removal of items, use the Remove button ("X"):
 
 ---
 
+### Change Events
+
+The component dispatches `change` events whenever items are added, edited, deleted, or removed.
+
+#### Event Structure (v2.5+)
+
+```javascript
+event.detail = {
+  items: [     // Full item objects with metadata
+    { id: 'item-1', value: 'apple', deleted: false },
+    { id: 'item-2', value: 'banana', deleted: true }
+  ],
+  active: ['apple'],    // ⚠️ String array (v2.5 breaking change)
+  deleted: ['banana']   // ⚠️ String array (v2.5 breaking change)
+}
+```
+
+**Breaking Change in v2.5**: `active` and `deleted` now contain **string values** instead of objects.
+
+#### Migration from v2.4
+
+**Before (v2.4)**:
+```javascript
+taskList.addEventListener('change', (e) => {
+  const firstActive = e.detail.active[0].value;  // ❌ No longer works
+  const firstDeleted = e.detail.deleted[0].value; // ❌ No longer works
+});
+```
+
+**After (v2.5)**:
+```javascript
+taskList.addEventListener('change', (e) => {
+  const firstActive = e.detail.active[0];   // ✅ Direct string access
+  const firstDeleted = e.detail.deleted[0]; // ✅ Direct string access
+});
+```
+
+#### Usage Examples
+
+**Basic Event Listening**:
+```javascript
+const el = document.querySelector('ck-primitive-array');
+
+el.addEventListener('change', (e) => {
+  console.log('Active items:', e.detail.active);    // ['a', 'b', 'c']
+  console.log('Deleted items:', e.detail.deleted);  // ['x', 'y']
+  console.log('Total items:', e.detail.items.length);
+});
+```
+
+**Form Submission with Separation**:
+```javascript
+const taskList = document.querySelector('ck-primitive-array');
+
+document.querySelector('form').addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const event = new CustomEvent('form-submit');
+  taskList.addEventListener('change', (changeEvent) => {
+    fetch('/api/tasks', {
+      method: 'POST',
+      body: JSON.stringify({
+        completed: changeEvent.detail.active,
+        archived: changeEvent.detail.deleted
+      })
+    });
+  }, { once: true });
+});
+```
+
+**React Integration**:
+```jsx
+function TaskManager() {
+  const handleChange = (e) => {
+    setActiveTasks(e.detail.active);
+    setDeletedTasks(e.detail.deleted);
+  };
+
+  return (
+    <ck-primitive-array
+      items={JSON.stringify(initialTasks)}
+      ref={(el) => el?.addEventListener('change', handleChange)}
+    />
+  );
+}
+```
+
+**Review Workflow**:
+```javascript
+const itemList = document.querySelector('ck-primitive-array');
+
+itemList.addEventListener('change', (e) => {
+  // Show review panel if there are deletions
+  if (e.detail.deleted.length > 0) {
+    showReviewPanel(e.detail.deleted);
+  }
+
+  // Update counters
+  document.getElementById('active-count').textContent = e.detail.active.length;
+  document.getElementById('deleted-count').textContent = e.detail.deleted.length;
+});
+```
+
+#### Event Triggers
+
+Change events fire on:
+- ✅ Adding items (via Add button or `addItem()`)
+- ✅ Editing items (inline input changes)
+- ✅ Soft deleting items (Delete button)
+- ✅ Undoing deletions (Undo button)
+- ✅ Hard removing items (X button)
+
+#### Event Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `bubbles` | `true` | Event bubbles up through DOM |
+| `detail.items` | `Array<{id, value, deleted}>` | All items with full metadata |
+| `detail.active` | `string[]` | Values of non-deleted items |
+| `detail.deleted` | `string[]` | Values of soft-deleted items |
+
+#### Timing Guarantees
+
+Change events fire **after** DOM updates are complete:
+```javascript
+el.addEventListener('change', () => {
+  // DOM is already updated
+  const inputs = el.shadowRoot.querySelectorAll('input');
+  console.log('Input count:', inputs.length); // Reflects current state
+});
+```
+
+---
+
 ### Browser Support
 
 The component works in all modern browsers that support:
