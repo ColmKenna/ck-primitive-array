@@ -741,13 +741,8 @@ describe('CkPrimitiveArray Component', () => {
     test('Enter is no-op when readonly', () => {
       const el = new CkPrimitiveArray();
       el.setAttribute('readonly', '');
+      el.setAttribute('items', '["a"]');
       document.body.appendChild(el);
-
-      const addButton = el.shadowRoot?.querySelector(
-        'button.add-item'
-      ) as HTMLButtonElement;
-      addButton.click(); // This won't work since button is disabled, so add programmatically
-      el.addItem();
 
       const input = el.shadowRoot?.querySelector(
         'input[type="text"]'
@@ -3587,6 +3582,475 @@ describe('CkPrimitiveArray Component', () => {
 
       expect(input.getAttribute('aria-invalid')).toBe('true');
       expect(el.shadowRoot?.querySelector('[data-error]')).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('State Attributes - Disabled', () => {
+    test('disables all inputs when disabled is set', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll('input[type="text"]') || []
+      ) as HTMLInputElement[];
+      expect(inputs.length).toBe(2);
+      inputs.forEach(input => {
+        expect(input.disabled).toBe(true);
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('disables delete buttons when disabled is set', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      const buttons = Array.from(
+        el.shadowRoot?.querySelectorAll('button[data-action="delete"]') || []
+      ) as HTMLButtonElement[];
+      expect(buttons.length).toBe(2);
+      buttons.forEach(button => {
+        expect(button.disabled).toBe(true);
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('disables remove buttons when disabled is set', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      const buttons = Array.from(
+        el.shadowRoot?.querySelectorAll('button[data-action="remove"]') || []
+      ) as HTMLButtonElement[];
+      expect(buttons.length).toBe(2);
+      buttons.forEach(button => {
+        expect(button.disabled).toBe(true);
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('enter key does not add item when disabled', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const initialCount = el.items.length;
+
+      const enterEvent = new window.KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+      });
+      input.dispatchEvent(enterEvent);
+
+      expect(el.items.length).toBe(initialCount);
+
+      document.body.removeChild(el);
+    });
+
+    test('addItem is a no-op when disabled', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      el.addItem('should-not-add');
+
+      expect(el.items.length).toBe(0);
+      const inputs = el.shadowRoot?.querySelectorAll('input[type="text"]');
+      expect(inputs?.length ?? 0).toBe(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('removing disabled restores enabled inputs', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      const disabledInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(disabledInput.disabled).toBe(true);
+
+      el.removeAttribute('disabled');
+
+      const enabledInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(enabledInput.disabled).toBe(false);
+
+      document.body.removeChild(el);
+    });
+
+    test('applies disabled visual state styling', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      const container = el.shadowRoot?.querySelector(
+        '.ck-primitive-array'
+      ) as HTMLElement | null;
+      expect(container?.classList.contains('is-disabled')).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('change events still dispatch when disabled is set programmatically', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      el.setAttribute('disabled', '');
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'edited';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          items: Array<{ id: string; value: string; deleted: boolean }>;
+        };
+      };
+      expect(event.detail.items[0].value).toBe('edited');
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('form submission includes values when disabled', () => {
+      const form = document.createElement('form');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'items');
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('disabled', '');
+      form.appendChild(el);
+      document.body.appendChild(form);
+
+      const formData = new window.FormData(form);
+      const items = formData.getAll('items[]');
+      expect(items).toEqual(['a', 'b']);
+
+      document.body.removeChild(form);
+    });
+  });
+
+  describe('State Attributes - Readonly', () => {
+    test('sets inputs to readonly when readonly is set', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll('input[type="text"]') || []
+      ) as HTMLInputElement[];
+      expect(inputs.length).toBe(2);
+      inputs.forEach(input => {
+        expect(input.readOnly).toBe(true);
+        expect(input.disabled).toBe(false);
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('disables delete buttons when readonly is set', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const buttons = Array.from(
+        el.shadowRoot?.querySelectorAll('button[data-action="delete"]') || []
+      ) as HTMLButtonElement[];
+      expect(buttons.length).toBe(2);
+      buttons.forEach(button => {
+        expect(button.disabled).toBe(true);
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('disables remove buttons when readonly is set', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const buttons = Array.from(
+        el.shadowRoot?.querySelectorAll('button[data-action="remove"]') || []
+      ) as HTMLButtonElement[];
+      expect(buttons.length).toBe(2);
+      buttons.forEach(button => {
+        expect(button.disabled).toBe(true);
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('addItem is a no-op when readonly', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      el.addItem('should-not-add');
+
+      expect(el.items.length).toBe(0);
+      const inputs = el.shadowRoot?.querySelectorAll('input[type="text"]');
+      expect(inputs?.length ?? 0).toBe(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('removing readonly restores editable inputs', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const readonlyInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(readonlyInput.readOnly).toBe(true);
+
+      el.removeAttribute('readonly');
+
+      const editableInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(editableInput.readOnly).toBe(false);
+
+      document.body.removeChild(el);
+    });
+
+    test('applies readonly visual state styling', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const container = el.shadowRoot?.querySelector(
+        '.ck-primitive-array'
+      ) as HTMLElement | null;
+      expect(container?.classList.contains('is-readonly')).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('readonly inputs remain focusable', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.focus();
+
+      expect(el.shadowRoot?.activeElement).toBe(input);
+      expect(input.readOnly).toBe(true);
+      expect(input.disabled).toBe(false);
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('State Attributes - Dynamic Toggling', () => {
+    test('adding disabled updates controls immediately', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const initialInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(initialInput.disabled).toBe(false);
+
+      el.setAttribute('disabled', '');
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(input.disabled).toBe(true);
+      expect(deleteButton.disabled).toBe(true);
+      expect(removeButton.disabled).toBe(true);
+      expect(addButton.disabled).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('removing disabled updates controls immediately', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      const disabledInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(disabledInput.disabled).toBe(true);
+
+      el.removeAttribute('disabled');
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(input.disabled).toBe(false);
+      expect(deleteButton.disabled).toBe(false);
+      expect(removeButton.disabled).toBe(false);
+      expect(addButton.disabled).toBe(false);
+
+      document.body.removeChild(el);
+    });
+
+    test('adding readonly updates controls immediately', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const initialInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(initialInput.readOnly).toBe(false);
+
+      el.setAttribute('readonly', '');
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(input.readOnly).toBe(true);
+      expect(deleteButton.disabled).toBe(true);
+      expect(removeButton.disabled).toBe(true);
+      expect(addButton.disabled).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('removing readonly updates controls immediately', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const readonlyInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(readonlyInput.readOnly).toBe(true);
+
+      el.removeAttribute('readonly');
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(input.readOnly).toBe(false);
+      expect(deleteButton.disabled).toBe(false);
+      expect(removeButton.disabled).toBe(false);
+      expect(addButton.disabled).toBe(false);
+
+      document.body.removeChild(el);
+    });
+
+    test('combining disabled and readonly applies both effects', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('disabled', '');
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(input.disabled).toBe(true);
+      expect(input.readOnly).toBe(true);
+      expect(deleteButton.disabled).toBe(true);
+      expect(removeButton.disabled).toBe(true);
+      expect(addButton.disabled).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('disabling during edit preserves value and disables input', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'edited';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      el.setAttribute('disabled', '');
+
+      const updatedInput = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(updatedInput.value).toBe('edited');
+      expect(updatedInput.disabled).toBe(true);
 
       document.body.removeChild(el);
     });

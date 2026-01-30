@@ -89,7 +89,7 @@ Import and use in your HTML:
 
 ##### `readonly`
 - **Type**: Boolean attribute
-- **Description**: When present, disables the Add button
+- **Description**: When present, inputs become read-only (still focusable) and Add/Delete/Remove controls are disabled
 
 ```html
 <ck-primitive-array readonly items='["locked"]'></ck-primitive-array>
@@ -97,11 +97,16 @@ Import and use in your HTML:
 
 ##### `disabled`
 - **Type**: Boolean attribute
-- **Description**: When present, disables the Add button
+- **Description**: When present, inputs and Add/Delete/Remove controls are disabled
 
 ```html
 <ck-primitive-array disabled items='["locked"]'></ck-primitive-array>
 ```
+
+##### State Attributes Summary
+- **Readonly**: Inputs are read-only (focusable), controls disabled, Enter/addItem are no-ops
+- **Disabled**: Inputs are disabled, controls disabled, Enter/addItem are no-ops, form values still submit via hidden inputs
+- **Dynamic**: Toggling either attribute updates controls immediately
 
 ### Add Button
 
@@ -130,6 +135,8 @@ el.addItem();
 el.addItem('Buy milk');
 ```
 
+**Note**: `addItem()` is a no-op when `readonly` or `disabled` is present.
+
 ### Keyboard Shortcuts
 
 #### Enter Key
@@ -145,7 +152,7 @@ User types in input → Presses Enter → New item added → Focus moves to Add 
 - ✅ Preserves the current input's value
 - ✅ Moves focus to the Add button
 - ✅ Dispatches a `change` event
-- ❌ Does nothing if `readonly` attribute is present
+- ❌ Does nothing if `readonly` or `disabled` attribute is present
 
 **Example**:
 ```html

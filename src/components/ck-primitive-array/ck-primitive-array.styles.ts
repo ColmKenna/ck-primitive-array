@@ -88,6 +88,25 @@ export const ckPrimitiveArrayCSS = `
   background: #d73a49;
   color: #fff;
 }
+
+.ck-primitive-array.is-disabled {
+  opacity: 0.6;
+}
+
+.ck-primitive-array.is-disabled .ck-primitive-array__input,
+.ck-primitive-array.is-disabled .ck-primitive-array__delete,
+.ck-primitive-array.is-disabled .ck-primitive-array__remove,
+.ck-primitive-array.is-disabled .add-item {
+  cursor: not-allowed;
+}
+
+.ck-primitive-array.is-readonly {
+  opacity: 0.85;
+}
+
+.ck-primitive-array.is-readonly .ck-primitive-array__input {
+  background: #f6f8fa;
+}
 `;
 
 // Try to create a constructable stylesheet where supported. Fall back to null.

@@ -450,6 +450,9 @@ export class CkPrimitiveArray extends HTMLElement {
       }
     }
 
+    const isReadonly = this.hasAttribute('readonly');
+    const isDisabled = this.hasAttribute('disabled');
+
     // Apply per-instance color via CSS custom property instead of embedding styles.
     this.style.setProperty('--ck-primitive-array-color', this.color);
 
@@ -497,6 +500,11 @@ export class CkPrimitiveArray extends HTMLElement {
       this.addButton.addEventListener('click', this.boundAddHandler);
     }
 
+    if (this.container) {
+      this.container.classList.toggle('is-disabled', isDisabled);
+      this.container.classList.toggle('is-readonly', isReadonly);
+    }
+
     // Update dynamic content
     if (this.messageElement) {
       this.messageElement.textContent = `Hello, ${this.name}!`;
@@ -505,8 +513,6 @@ export class CkPrimitiveArray extends HTMLElement {
 
     // Update add button disabled state based on readonly/disabled attributes
     if (this.addButton) {
-      const isReadonly = this.hasAttribute('readonly');
-      const isDisabled = this.hasAttribute('disabled');
       this.addButton.disabled = isReadonly || isDisabled;
     }
 
@@ -531,6 +537,8 @@ export class CkPrimitiveArray extends HTMLElement {
     value: string;
     deleted: boolean;
   }): HTMLDivElement {
+    const isReadonly = this.hasAttribute('readonly');
+    const isDisabled = this.hasAttribute('disabled');
     const itemRow = document.createElement('div');
     itemRow.className = 'ck-primitive-array__item';
     itemRow.setAttribute('role', 'listitem');
@@ -552,15 +560,17 @@ export class CkPrimitiveArray extends HTMLElement {
     input.setAttribute('aria-label', `Item: ${itemState.value}`);
 
     // Disable input if item is soft-deleted
-    if (itemState.deleted) {
-      input.disabled = true;
-    }
+    input.readOnly = isReadonly;
+    input.disabled = itemState.deleted || isDisabled;
 
     input.addEventListener('input', () => {
       this.commitInputValue(itemState, input, itemRow, true);
     });
     input.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
+        if (isDisabled) {
+          return;
+        }
         // Ctrl+Enter or Cmd+Enter submits form
         if (e.ctrlKey || e.metaKey) {
           const form = this.closest('form');
@@ -588,8 +598,12 @@ export class CkPrimitiveArray extends HTMLElement {
       itemState.deleted ? 'true' : 'false'
     );
     deleteButton.textContent = itemState.deleted ? 'Undo' : 'Delete';
+    deleteButton.disabled = isReadonly || isDisabled;
 
     deleteButton.addEventListener('click', () => {
+      if (this.hasAttribute('readonly') || this.hasAttribute('disabled')) {
+        return;
+      }
       itemState.deleted = !itemState.deleted;
 
       // Update button text and aria-pressed
@@ -607,7 +621,8 @@ export class CkPrimitiveArray extends HTMLElement {
       }
 
       // Update input disabled state
-      input.disabled = itemState.deleted;
+      input.readOnly = this.hasAttribute('readonly');
+      input.disabled = itemState.deleted || this.hasAttribute('disabled');
 
       // Sync hidden inputs in light DOM
       this.syncHiddenInputs();
@@ -644,8 +659,12 @@ export class CkPrimitiveArray extends HTMLElement {
     removeButton.className = 'ck-primitive-array__remove';
     removeButton.setAttribute('data-action', 'remove');
     removeButton.textContent = 'X';
+    removeButton.disabled = isReadonly || isDisabled;
 
     removeButton.addEventListener('click', () => {
+      if (this.hasAttribute('readonly') || this.hasAttribute('disabled')) {
+        return;
+      }
       // Remove from state
       const index = this.itemsState.findIndex(item => item.id === itemState.id);
       if (index !== -1) {
@@ -771,6 +790,9 @@ export class CkPrimitiveArray extends HTMLElement {
   }
 
   addItem(value?: string) {
+    if (this.hasAttribute('readonly') || this.hasAttribute('disabled')) {
+      return;
+    }
     if (!this.listElement) return;
 
     const newItem = {

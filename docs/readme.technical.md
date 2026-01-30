@@ -109,7 +109,21 @@ Invoked when:
 
 ```typescript
 static get observedAttributes() {
-  return ['name', 'color', 'items', 'readonly', 'disabled'];
+  return [
+    'name',
+    'color',
+    'items',
+    'readonly',
+    'disabled',
+    'deleted-name',
+    'required',
+    'min',
+    'max',
+    'minlength',
+    'maxlength',
+    'pattern',
+    'allow-duplicates',
+  ];
 }
 
 attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -143,8 +157,9 @@ set name(value: string) {
 private render() {
   // 1. Handle fallback styles
   // 2. Set CSS custom property
-  // 3. Update shadow DOM innerHTML
-  // 4. Apply inline style for testability
+  // 3. Create DOM structure once (on first render)
+  // 4. Update message, state classes, and controls
+  // 5. Render items + sync hidden inputs + validate constraints
 }
 ```
 
@@ -152,10 +167,9 @@ private render() {
 
 1. **Fallback Style Injection**: If constructable stylesheets unavailable
 2. **CSS Variable Update**: Set `--ck-primitive-array-color` on host element
-3. **DOM Update**: Use template literal to generate HTML
-4. **Testability Hack**: Apply inline color style for Jest assertions
-
-**⚠️ Security Note**: Current implementation uses template literals in `innerHTML`. Safe for current use case (controlled attributes) but could be XSS vector if accepting arbitrary user input.
+3. **DOM Initialization**: Create the container, controls, and list once per instance
+4. **State Updates**: Toggle disabled/readonly classes and update add button state
+5. **Item Rendering**: Render rows using DOM APIs and attach event handlers
 
 ### Template Structure
 
@@ -168,7 +182,7 @@ private render() {
   <div class="ck-primitive-array__list" role="list" aria-label="items">
     <p class="ck-primitive-array__placeholder">No items</p>
     <div class="ck-primitive-array__item" role="listitem">
-      <input type="text" value="${item.value}" />
+      <input type="text" value="${item.value}" aria-label="Item: ${item.value}" />
       <button type="button" data-action="delete">Delete</button>
       <button type="button" data-action="remove">X</button>
     </div>
@@ -179,6 +193,12 @@ private render() {
 
 **Naming Convention**: BEM-style class names  
 **Dynamic Content**: `name` is dynamic; items render as editable rows based on internal item state
+
+### State Attributes (Readonly + Disabled)
+
+- **Readonly**: Sets `input.readOnly = true`, disables Add/Delete/Remove buttons, applies `.is-readonly` class
+- **Disabled**: Sets `input.disabled = true`, disables Add/Delete/Remove buttons, applies `.is-disabled` class
+- **Dynamic**: Toggling attributes re-renders rows and updates control states immediately
 
 ## TypeScript Configuration
 

@@ -26,8 +26,8 @@ The `CkPrimitiveArray` is a web component that displays a greeting message with 
 | `deleted-name`| string | –       | Name for deleted items' hidden inputs (e.g., `deleted-name[]`) |
 | `color`       | string | "#333"  | Text color for the message  |
 | `items`       | JSON   | `[]`    | JSON array of primitive values to display as items |
-| `readonly`    | boolean| –       | When present, disables the Add button |
-| `disabled`    | boolean| –       | When present, disables the Add button |
+| `readonly`    | boolean| –       | When present, makes inputs read-only and disables Add/Delete/Remove controls |
+| `disabled`    | boolean| –       | When present, disables inputs and all controls (Add/Delete/Remove) |
 
 ### Properties
 
@@ -70,6 +70,7 @@ The `items` attribute accepts a JSON array and applies the following parsing log
 - Creates a new row with a text input pre-filled with the given value
 - The new input receives focus automatically
 - A `change` CustomEvent is dispatched with `detail.items` containing the updated array
+- **Readonly/Disabled**: No-op when `readonly` or `disabled` is present
 
 ### Add Button Behavior
 
@@ -81,6 +82,25 @@ The Add button calls `addItem()` with no argument (empty value):
 4. **Event**: A `change` CustomEvent is dispatched with `detail.items` containing the updated array
 5. **Readonly/Disabled**: The Add button is disabled when the `readonly` or `disabled` attribute is present
 
+### State Attributes (Readonly + Disabled)
+
+#### `readonly`
+- Inputs are set to `readOnly` (still focusable)
+- Add/Delete/Remove buttons are disabled
+- Enter key does nothing
+- `addItem()` is a no-op
+- Visual readonly styling is applied
+
+#### `disabled`
+- Inputs are disabled
+- Add/Delete/Remove buttons are disabled
+- Enter key does nothing
+- `addItem()` is a no-op
+- Visual disabled styling is applied
+- Hidden inputs remain in the light DOM so form submissions include values
+
+**Dynamic Toggling**: Adding or removing `readonly`/`disabled` updates controls immediately.
+
 ### Keyboard Interaction
 
 #### Enter Key in Item Input
@@ -89,7 +109,7 @@ When the user presses **Enter** while focused on an item input:
 
 1. **Default Behavior**: Calls `addItem()` to create a new empty item
 2. **Focus Management**: After adding, focus moves to the Add button
-3. **Readonly Respect**: If `readonly` attribute is present, Enter key does nothing
+3. **State Respect**: If `readonly` or `disabled` is present, Enter key does nothing
 4. **Event Dispatch**: A `change` CustomEvent is dispatched (via `addItem()`)
 5. **Value Preservation**: The original input's value is preserved in state
 

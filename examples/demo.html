@@ -357,7 +357,7 @@ element.<span class="highlight">color</span> = <span class="string">'#e67e22'</s
         <!-- Add Button Behavior -->
         <div class="section">
             <h2>10. Add Button Behavior</h2>
-            <p>Click the <code>Add</code> button to append new empty items. The new input receives focus automatically. A <code>change</code> event is dispatched each time.</p>
+            <p>Click the <code>Add</code> button to append new empty items. The new input receives focus automatically. A <code>change</code> event is dispatched each time. When <code>readonly</code> or <code>disabled</code> is set, inputs and controls lock immediately.</p>
             <div class="demo-grid">
                 <div class="demo-item">
                     <h3>Empty List (click Add)</h3>
@@ -365,11 +365,11 @@ element.<span class="highlight">color</span> = <span class="string">'#e67e22'</s
                     <p id="addDemoLog" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;"></p>
                 </div>
                 <div class="demo-item">
-                    <h3>Readonly (Add disabled)</h3>
+                    <h3>Readonly (inputs locked, controls disabled)</h3>
                     <ck-primitive-array name="Readonly List" readonly items='["Locked Item"]'></ck-primitive-array>
                 </div>
                 <div class="demo-item">
-                    <h3>Disabled (Add disabled)</h3>
+                    <h3>Disabled (all controls disabled)</h3>
                     <ck-primitive-array name="Disabled List" disabled items='["Disabled Item"]'></ck-primitive-array>
                 </div>
             </div>
@@ -381,7 +381,7 @@ element.<span class="highlight">color</span> = <span class="string">'#e67e22'</s
 el.<span class="highlight">addItem</span>(<span class="string">'Buy milk'</span>); <span class="comment">// pre-filled</span>
 el.<span class="highlight">addItem</span>();             <span class="comment">// empty</span>
 
-<span class="comment">// Readonly: Add button disabled</span>
+<span class="comment">// Readonly: inputs are read-only + controls disabled</span>
 <span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">readonly</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
         </div>
 
@@ -412,6 +412,18 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
                     </ck-primitive-array>
                     <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #999;">
                         ⚠️ Enter key is disabled when readonly attribute is set
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>Disabled (Enter has no effect)</h3>
+                    <ck-primitive-array
+                        name="Disabled"
+                        disabled
+                        items='["Press Enter here"]'
+                        color="#7f8c8d">
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #999;">
+                        ⚠️ Inputs are disabled when the disabled attribute is set
                     </p>
                 </div>
             </div>
