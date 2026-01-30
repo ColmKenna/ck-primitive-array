@@ -198,6 +198,7 @@ private render() {
     <div class="ck-primitive-array__item" role="listitem" part="row">
       <input type="text" value="${item.value}" aria-label="Item 1: ${item.value}" part="input" />
       <button type="button" data-action="delete" aria-label="Delete Item 1: ${item.value}" part="delete-button">Delete</button>
+      <!-- Remove button only present when allow-hard-delete attribute is set -->
       <button type="button" data-action="remove" aria-label="Remove Item 1: ${item.value}" part="remove-button">X</button>
     </div>
   </div>
@@ -207,7 +208,8 @@ private render() {
 ```
 
 **Naming Convention**: BEM-style class names  
-**Dynamic Content**: `name` is dynamic; items render as editable rows based on internal item state
+**Dynamic Content**: `name` is dynamic; items render as editable rows based on internal item state  
+**Conditional Elements**: Remove button only rendered when `allow-hard-delete` attribute is present
 
 ### CSS Parts
 
@@ -221,6 +223,57 @@ private render() {
 - **Readonly**: Sets `input.readOnly = true`, disables Add/Delete/Remove buttons, applies `.is-readonly` class
 - **Disabled**: Sets `input.disabled = true`, disables Add/Delete/Remove buttons, applies `.is-disabled` class
 - **Dynamic**: Toggling attributes re-renders rows and updates control states immediately
+
+### Hard Delete Controls
+
+#### `allow-hard-delete` Attribute
+
+**Purpose**: Controls visibility of the permanent delete (Remove) button
+
+**Implementation**:
+```typescript
+// In createItemRow()
+if (this.hasAttribute('allow-hard-delete')) {
+  const removeButton = document.createElement('button');
+  // ... button configuration
+  itemRow.appendChild(removeButton);
+}
+```
+
+**Default**: Remove button is NOT created  
+**When present**: Remove button is created and appended to each item row  
+**Accessibility**: Hidden buttons are not in DOM, automatically excluded from tab order
+
+#### `confirm-hard-delete` Attribute
+
+**Purpose**: Requires user confirmation before permanent deletion
+
+**Implementation**:
+```typescript
+removeButton.addEventListener('click', () => {
+  if (this.hasAttribute('confirm-hard-delete')) {
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete "${itemState.value}"? ` +
+      `This action cannot be undone.`
+    );
+    if (!confirmed) {
+      removeButton.focus(); // Return focus to button
+      return; // Abort deletion
+    }
+  }
+  // Proceed with deletion...
+});
+```
+
+**Default**: No confirmation (immediate delete)  
+**When present**: Browser native confirmation dialog shown  
+**Dialog message**: Includes item value for context  
+**On cancel**: 
+- Focus returns to Remove button
+- No change event dispatched
+- Item remains in list
+
+**Dependencies**: Requires `allow-hard-delete` to have any effect (no button = no confirmation)
 
 ## TypeScript Configuration
 

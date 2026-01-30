@@ -353,6 +353,166 @@ import "../dist/ck-primitive-array/ck-primitive-array.esm.js";
       <p><strong>Description:</strong> Allows duplicate item values when present. By default, duplicate values cause
         a validation error to appear on the edited item.</p>
       <p><strong>Examples:</strong> <a href="examples/advanced-usage.html#allow-duplicates-demo">Advanced Usage</a></p>
+
+      <h3><code>allow-hard-delete</code></h3>
+      <table>
+        <tr><th>Property</th><td>allow-hard-delete</td></tr>
+        <tr><th>Type</th><td>boolean (attribute presence)</td></tr>
+        <tr><th>Default</th><td>false</td></tr>
+        <tr><th>Valid Values</th><td>Present or absent</td></tr>
+      </table>
+      <p><strong>Description:</strong> Enables the permanent remove button for each item row. When present, users can
+        permanently delete items from the list. Without this attribute, only soft delete (toggle delete/undo) is available.
+        Hard delete removes the item from the component's internal state and the DOM completely, unlike soft delete which
+        marks items as deleted but preserves them for form submission (when <code>deleted-name</code> is set).</p>
+      
+      <h4>Behavior Comparison</h4>
+      <table>
+        <tr>
+          <th>Feature</th>
+          <th>Without allow-hard-delete</th>
+          <th>With allow-hard-delete</th>
+        </tr>
+        <tr>
+          <td>Buttons Shown</td>
+          <td>Delete/Undo button only</td>
+          <td>Delete/Undo + Remove button</td>
+        </tr>
+        <tr>
+          <td>Delete Action</td>
+          <td>Toggles deleted flag (reversible)</td>
+          <td>Same soft delete available</td>
+        </tr>
+        <tr>
+          <td>Remove Action</td>
+          <td>Not available</td>
+          <td>Permanently removes item</td>
+        </tr>
+        <tr>
+          <td>Item Recovery</td>
+          <td>Always possible via Undo</td>
+          <td>Only for soft-deleted items</td>
+        </tr>
+      </table>
+
+      <h4>Usage Examples</h4>
+      
+      <p><strong>Example 1: Hard Delete NOT Allowed (Default)</strong></p>
+      <pre><code>&lt;!-- Only soft delete available --&gt;
+&lt;ck-primitive-array 
+  name="tags"
+  items='["javascript", "typescript", "html"]'&gt;
+&lt;/ck-primitive-array&gt;
+
+&lt;!-- Result: Each row shows Delete/Undo button only --&gt;
+&lt;!-- Users can mark items as deleted but cannot permanently remove them --&gt;</code></pre>
+
+      <p><strong>Example 2: Hard Delete Allowed (No Confirmation)</strong></p>
+      <pre><code>&lt;!-- Enable permanent removal --&gt;
+&lt;ck-primitive-array 
+  name="tags"
+  allow-hard-delete
+  items='["javascript", "typescript", "html"]'&gt;
+&lt;/ck-primitive-array&gt;
+
+&lt;!-- Result: Each row shows Delete/Undo button AND Remove button --&gt;
+&lt;!-- Remove button immediately deletes without confirmation --&gt;</code></pre>
+
+      <p><strong>Example 3: Hard Delete with Confirmation (Recommended)</strong></p>
+      <pre><code>&lt;!-- Enable permanent removal with safety confirmation --&gt;
+&lt;ck-primitive-array 
+  name="tags"
+  allow-hard-delete
+  confirm-hard-delete
+  items='["javascript", "typescript", "html"]'&gt;
+&lt;/ck-primitive-array&gt;
+
+&lt;!-- Result: Each row shows Delete/Undo button AND Remove button --&gt;
+&lt;!-- Remove button shows confirmation dialog before deleting --&gt;
+&lt;!-- Dialog message: "Are you sure you want to permanently delete 'javascript'? 
+     This action cannot be undone." --&gt;</code></pre>
+
+      <div class="callout">
+        <strong>💡 Best Practice:</strong> When allowing hard delete, always use <code>confirm-hard-delete</code> 
+        to prevent accidental data loss. The confirmation dialog gives users a chance to cancel the permanent deletion.
+      </div>
+
+      <p><strong>Interactive Examples:</strong> 
+        <a href="examples/advanced-usage.html#hard-delete-demo">Advanced Usage</a>,
+        <a href="examples/edge-cases.html#hard-delete-edge">Edge Cases</a></p>
+
+      <h3><code>confirm-hard-delete</code></h3>
+      <table>
+        <tr><th>Property</th><td>confirm-hard-delete</td></tr>
+        <tr><th>Type</th><td>boolean (attribute presence)</td></tr>
+        <tr><th>Default</th><td>false</td></tr>
+        <tr><th>Valid Values</th><td>Present or absent</td></tr>
+      </table>
+      <p><strong>Description:</strong> When present (and <code>allow-hard-delete</code> is also present), shows a browser
+        confirmation dialog before permanently removing an item. The dialog displays the item value and warns that the action
+        cannot be undone. If the user cancels, focus returns to the remove button and no changes occur. This attribute has
+        no effect unless <code>allow-hard-delete</code> is also set.</p>
+      
+      <div class="warning">
+        <strong>⚠️ Dependency Warning:</strong> <code>confirm-hard-delete</code> requires <code>allow-hard-delete</code>
+        to be present. Without <code>allow-hard-delete</code>, the remove button is not rendered and confirmation cannot occur.
+      </div>
+
+      <h4>Confirmation Dialog Behavior</h4>
+      <p>When a user clicks the Remove button with <code>confirm-hard-delete</code> enabled:</p>
+      <ol>
+        <li>Browser native confirmation dialog appears</li>
+        <li>Dialog shows: <em>"Are you sure you want to permanently delete "{value}"? This action cannot be undone."</em></li>
+        <li>User can click OK (confirm) or Cancel</li>
+        <li>If confirmed: Item is permanently removed, change event fires, screen reader announces removal</li>
+        <li>If cancelled: Dialog closes, focus returns to Remove button, no changes occur, no events fire</li>
+      </ol>
+
+      <h4>Usage Examples</h4>
+
+      <p><strong>Example 1: Invalid Configuration (Warning Case)</strong></p>
+      <pre><code>&lt;!-- ❌ DOES NOT WORK: confirm-hard-delete without allow-hard-delete --&gt;
+&lt;ck-primitive-array 
+  name="tags"
+  confirm-hard-delete
+  items='["javascript", "typescript"]'&gt;
+&lt;/ck-primitive-array&gt;
+
+&lt;!-- Result: No Remove button shown, confirm-hard-delete has no effect --&gt;
+&lt;!-- Only Delete/Undo button available (soft delete only) --&gt;</code></pre>
+
+      <p><strong>Example 2: Correct Configuration</strong></p>
+      <pre><code>&lt;!-- ✅ WORKS: Both attributes present --&gt;
+&lt;ck-primitive-array 
+  name="tags"
+  allow-hard-delete
+  confirm-hard-delete
+  items='["javascript", "typescript"]'&gt;
+&lt;/ck-primitive-array&gt;
+
+&lt;!-- Result: Remove button shown, clicking it shows confirmation dialog --&gt;</code></pre>
+
+      <p><strong>Example 3: Programmatic Confirmation Check</strong></p>
+      <pre><code>const component = document.querySelector('ck-primitive-array');
+
+// Listen for changes to detect if removal was completed or cancelled
+component.addEventListener('change', (e) => {
+  console.log('Items after user action:', e.detail.items);
+  // If user cancelled, items array unchanged
+  // If user confirmed, item is removed from array
+});
+
+// Note: There's no way to detect cancellation directly,
+// but absence of change event means user cancelled</code></pre>
+
+      <div class="callout">
+        <strong>💡 Accessibility Note:</strong> When user cancels the confirmation dialog, focus automatically returns 
+        to the Remove button, allowing keyboard users to continue navigating without losing their place.
+      </div>
+
+      <p><strong>Interactive Examples:</strong> 
+        <a href="examples/advanced-usage.html#confirm-hard-delete-demo">Advanced Usage</a>,
+        <a href="examples/internal-state.html#confirmation-behavior">Internal State - Confirmation Behavior</a></p>
     </section>
 
     <section id="css-properties">

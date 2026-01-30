@@ -35,6 +35,8 @@ The `CkPrimitiveArray` is a web component for editing a list of primitive values
 | `maxlength`   | number | –       | Maximum character length per item |
 | `pattern`     | string | –       | Regex pattern each item must match |
 | `allow-duplicates` | boolean | – | When present, allows duplicate values |
+| `allow-hard-delete` | boolean | – | When present, shows the hard delete (Remove) button for permanent item removal |
+| `confirm-hard-delete` | boolean | – | When present, shows confirmation dialog before hard delete (requires `allow-hard-delete`) |
 
 ### Properties
 
@@ -506,18 +508,52 @@ The hidden input for the removed item is removed from the DOM, ensuring form sub
 
 | Feature | Soft Delete | Hard Remove |
 |---------|-------------|-------------|
-| **Trigger** | Delete button | X button |
+| **Trigger** | Delete button | X button (requires `allow-hard-delete`) |
+| **Visibility** | Always visible | Hidden by default; shown when `allow-hard-delete` present |
+| **Confirmation** | None | Optional; shown when `confirm-hard-delete` present |
 | **Reversible** | Yes (Undo button) | No |
 | **DOM** | Row remains (styled as deleted) | Row removed |
 | **State** | `deleted: true` | Item removed from array |
 | **Hidden Input** | Renamed to `deleted-{name}[]` | Removed entirely |
 | **Focus** | Stays on toggle button | Moves to Add button |
 
+#### Hard Delete Controls
+
+##### `allow-hard-delete` Attribute
+- **Default**: Remove button is hidden
+- **When present**: Remove button (X) is visible on each item
+- **Purpose**: Opt-in control for permanent deletion capability
+- **Accessibility**: Hidden buttons are excluded from keyboard navigation
+
+##### `confirm-hard-delete` Attribute
+- **Requires**: `allow-hard-delete` must also be present
+- **Default**: No confirmation (immediate delete)
+- **When present**: Browser confirmation dialog shown before deletion
+- **Dialog message**: "Are you sure you want to permanently delete "{value}"? This action cannot be undone."
+- **On confirm**: Item is permanently deleted
+- **On cancel**: 
+  - Item remains in list
+  - Focus returns to Remove button
+  - No change event dispatched
+
+**Example Usage**:
+```html
+<!-- Remove button visible, no confirmation -->
+<ck-primitive-array allow-hard-delete items='["a", "b"]'></ck-primitive-array>
+
+<!-- Remove button visible with confirmation -->
+<ck-primitive-array allow-hard-delete confirm-hard-delete items='["a", "b"]'></ck-primitive-array>
+
+<!-- Remove button hidden (default behavior) -->
+<ck-primitive-array items='["a", "b"]'></ck-primitive-array>
+```
+
 #### Accessibility
 
 - **Focus management**: Focus moves to Add button (consistent with Enter key)
 - **ARIA labels**: Labels updated after removal to reflect new indices
 - **Keyboard navigation**: Add button receives focus for quick replacement
+- **Hidden buttons**: When `allow-hard-delete` is absent, remove buttons are not rendered, preventing keyboard focus
 - **Screen readers**: Updated ARIA labels announced on focus
 
 ---

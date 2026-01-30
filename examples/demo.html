@@ -1047,8 +1047,72 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
 <span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
         </div>
 
+        <!-- Hard Delete Controls -->
+        <div class="section">
+            <h2>17. Hard Delete Controls</h2>
+            <p>Control permanent item deletion with <code>allow-hard-delete</code> and <code>confirm-hard-delete</code> attributes.</p>
+            <p><strong>Default:</strong> Remove button is hidden (only soft delete available).</p>
+            <p><strong>With confirmation:</strong> Browser native dialog prevents accidental deletions.</p>
+
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Default (No Hard Delete)</h3>
+                    <ck-primitive-array
+                        id="noHardDeleteDemo"
+                        name="default"
+                        items='["Important", "Data", "Here"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Only soft delete (Delete/Undo) is available - items can be recovered
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>With Hard Delete</h3>
+                    <ck-primitive-array
+                        id="hardDeleteDemo"
+                        allow-hard-delete
+                        name="deletable"
+                        items='["Item 1", "Item 2", "Item 3"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 X button visible - items can be permanently deleted
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>With Confirmation</h3>
+                    <ck-primitive-array
+                        id="confirmDeleteDemo"
+                        allow-hard-delete
+                        confirm-hard-delete
+                        name="protected"
+                        items='["Critical", "Protected", "Content"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Requires confirmation before permanent deletion
+                    </p>
+                </div>
+            </div>
+
+            <h3>Usage Example</h3>
+            <pre><code class="html"><span class="comment">&lt;!-- Hidden by default --&gt;</span>
+<span class="keyword">&lt;ck-primitive-array</span> <span class="highlight">items</span>=<span class="string">'["a", "b"]'</span><span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span>
+
+<span class="comment">&lt;!-- Show remove button --&gt;</span>
+<span class="keyword">&lt;ck-primitive-array</span>
+  <span class="highlight">allow-hard-delete</span>
+  <span class="highlight">items</span>=<span class="string">'["a", "b"]'</span>
+<span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span>
+
+<span class="comment">&lt;!-- Require confirmation --&gt;</span>
+<span class="keyword">&lt;ck-primitive-array</span>
+  <span class="highlight">allow-hard-delete</span>
+  <span class="highlight">confirm-hard-delete</span>
+  <span class="highlight">items</span>=<span class="string">'["Important", "Data"]'</span>
+<span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
+
         <div class="section" id="accessibility-demo">
-            <h2>Accessibility & Keyboard</h2>
+            <h2>18. Accessibility & Keyboard</h2>
             <p>
                 Use Tab/Shift+Tab to move through controls, Enter/Space to activate buttons,
                 and Escape to return focus to Add. Inputs and buttons include index-aware ARIA
@@ -1057,7 +1121,7 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
             <div class="demo-grid">
                 <div class="demo-item">
                     <h3>Keyboard Navigation</h3>
-                    <ck-primitive-array id="accessibilityArray" items='["alpha", "beta"]'></ck-primitive-array>
+                    <ck-primitive-array id="accessibilityArray" allow-hard-delete items='["alpha", "beta"]'></ck-primitive-array>
                     <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
                         💡 Try Tab → Delete → Remove, Enter adds, Escape focuses Add
                     </p>

@@ -188,6 +188,160 @@ component.addItem('New value');</code></pre>
       </div>
       <pre><code>component.setAttribute('items', '["replaced", "fresh"]');</code></pre>
     </section>
+
+    <section id="hard-delete-demo">
+      <h2>Hard Delete Controls</h2>
+      <p>Compare soft delete (default) vs hard delete options.</p>
+      
+      <div class="grid">
+        <div class="card">
+          <h3 style="margin-top: 0; font-size: 1rem;">Default: Soft Delete Only</h3>
+          <ck-primitive-array 
+            name="SoftOnly"
+            items='["javascript", "typescript", "html"]'>
+          </ck-primitive-array>
+          <p class="note">⚠️ No Remove button shown. Only Delete/Undo available (soft delete).</p>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top: 0; font-size: 1rem;">Hard Delete Enabled</h3>
+          <ck-primitive-array 
+            allow-hard-delete
+            name="HardDelete"
+            items='["javascript", "typescript", "html"]'>
+          </ck-primitive-array>
+          <p class="note">✅ Remove button shown. Clicking it immediately deletes without warning.</p>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top: 0; font-size: 1rem;">Hard Delete with Confirmation</h3>
+          <ck-primitive-array 
+            allow-hard-delete
+            confirm-hard-delete
+            name="SafeDelete"
+            items='["javascript", "typescript", "html"]'>
+          </ck-primitive-array>
+          <p class="note">🛡️ Remove button shown. Clicking it shows confirmation dialog before deleting.</p>
+        </div>
+      </div>
+
+      <h3>Code Comparison</h3>
+      <pre><code>&lt;!-- Soft delete only (default) --&gt;
+&lt;ck-primitive-array 
+  name="SoftOnly"
+  items='["javascript", "typescript", "html"]'&gt;
+&lt;/ck-primitive-array&gt;
+
+&lt;!-- Hard delete allowed (no confirmation) --&gt;
+&lt;ck-primitive-array 
+  allow-hard-delete
+  name="HardDelete"
+  items='["javascript", "typescript", "html"]'&gt;
+&lt;/ck-primitive-array&gt;
+
+&lt;!-- Hard delete with confirmation (recommended) --&gt;
+&lt;ck-primitive-array 
+  allow-hard-delete
+  confirm-hard-delete
+  name="SafeDelete"
+  items='["javascript", "typescript", "html"]'&gt;
+&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="confirm-hard-delete-demo">
+      <h2>Confirmation Dialog Behavior</h2>
+      <p>See how the confirmation dialog works when removing items.</p>
+      
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array 
+            id="confirmDemo"
+            allow-hard-delete
+            confirm-hard-delete
+            name="ConfirmTest"
+            items='["item-1", "item-2", "item-3"]'>
+          </ck-primitive-array>
+          <div style="margin-top: 12px; padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px;">
+            <p style="margin: 0; font-size: 0.9rem;"><strong>Try it:</strong> Click a Remove button above.</p>
+            <p style="margin: 8px 0 0 0; font-size: 0.85rem;">
+              The browser will show: <em>"Are you sure you want to permanently delete 'item-1'? This action cannot be undone."</em>
+            </p>
+            <ul style="margin: 8px 0 0 0; font-size: 0.85rem; padding-left: 20px;">
+              <li>Click <strong>OK</strong> → Item is removed, change event fires</li>
+              <li>Click <strong>Cancel</strong> → Nothing happens, focus returns to button</li>
+            </ul>
+          </div>
+          <p class="note" id="confirmDemoLog">items: item-1, item-2, item-3</p>
+        </div>
+      </div>
+
+      <h3>Event Handling</h3>
+      <pre><code>const component = document.querySelector('#confirmDemo');
+
+component.addEventListener('change', (e) => {
+  console.log('Change event fired!');
+  console.log('Current items:', e.detail.items);
+  
+  // If user cancelled confirmation, this event won't fire
+  // If user confirmed, item is removed from e.detail.items
+});
+
+// Note: There's no event fired when user cancels the dialog</code></pre>
+    </section>
+
+    <section id="hard-delete-edge">
+      <h2>Invalid Configuration Warning</h2>
+      <p>What happens when <code>confirm-hard-delete</code> is used without <code>allow-hard-delete</code>.</p>
+      
+      <div class="grid">
+        <div class="card">
+          <h3 style="margin-top: 0; font-size: 1rem;">❌ Invalid: Confirmation without Allow</h3>
+          <ck-primitive-array 
+            confirm-hard-delete
+            name="InvalidConfig"
+            items='["item-1", "item-2"]'>
+          </ck-primitive-array>
+          <div style="margin-top: 12px; padding: 12px; background: #fee2e2; border-left: 4px solid #dc2626; border-radius: 6px;">
+            <p style="margin: 0; font-size: 0.9rem;"><strong>Result:</strong> No Remove button appears!</p>
+            <p style="margin: 8px 0 0 0; font-size: 0.85rem;">
+              The <code>confirm-hard-delete</code> attribute has no effect without <code>allow-hard-delete</code>.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top: 0; font-size: 1rem;">✅ Valid: Both Attributes Present</h3>
+          <ck-primitive-array 
+            allow-hard-delete
+            confirm-hard-delete
+            name="ValidConfig"
+            items='["item-1", "item-2"]'>
+          </ck-primitive-array>
+          <div style="margin-top: 12px; padding: 12px; background: #d1fae5; border-left: 4px solid #10b981; border-radius: 6px;">
+            <p style="margin: 0; font-size: 0.9rem;"><strong>Result:</strong> Remove button shown with confirmation!</p>
+            <p style="margin: 8px 0 0 0; font-size: 0.85rem;">
+              Both attributes work together to enable safe hard deletion.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <h3>Code Comparison</h3>
+      <pre><code>&lt;!-- ❌ DOES NOT WORK --&gt;
+&lt;ck-primitive-array 
+  confirm-hard-delete
+  items='["item-1", "item-2"]'&gt;
+&lt;/ck-primitive-array&gt;
+&lt;!-- Result: No Remove button, confirm-hard-delete ignored --&gt;
+
+&lt;!-- ✅ WORKS CORRECTLY --&gt;
+&lt;ck-primitive-array 
+  allow-hard-delete
+  confirm-hard-delete
+  items='["item-1", "item-2"]'&gt;
+&lt;/ck-primitive-array&gt;
+&lt;!-- Result: Remove button shown with confirmation dialog --&gt;</code></pre>
+    </section>
   </main>
 
   <script type="module">
@@ -251,6 +405,17 @@ component.addItem('New value');</code></pre>
     renderItemsLog(itemsPropertyDemo, itemsPropertyLog);
     renderItemsLog(methodAddDemo, methodAddLog);
     renderItemsLog(attributeSyncDemo, attributeSyncLog);
+
+    // Hard delete confirmation demo
+    const confirmDemo = document.getElementById('confirmDemo');
+    const confirmDemoLog = document.getElementById('confirmDemoLog');
+
+    if (confirmDemo) {
+      confirmDemo.addEventListener('change', (e) => {
+        renderItemsLog(confirmDemo, confirmDemoLog);
+        console.log('Change event fired after hard delete:', e.detail);
+      });
+    }
   </script>
 </body>
 </html>

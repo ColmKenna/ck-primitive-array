@@ -63,6 +63,16 @@ An editable list component for primitive values (strings, numbers, booleans) wit
 
 <!-- Custom header color -->
 <ck-primitive-array name="Tasks" color="#ff6b6b" items='["Plan", "Build"]'></ck-primitive-array>
+
+<!-- Enable hard delete (permanent removal) -->
+<ck-primitive-array allow-hard-delete items='["Item 1", "Item 2"]'></ck-primitive-array>
+
+<!-- Hard delete with confirmation -->
+<ck-primitive-array 
+  allow-hard-delete 
+  confirm-hard-delete 
+  items='["Important", "Data"]'>
+</ck-primitive-array>
 ```
 
 #### Attributes
@@ -75,6 +85,8 @@ An editable list component for primitive values (strings, numbers, booleans) wit
 | `readonly`| boolean | –     | Inputs read-only, controls disabled |
 | `disabled`| boolean | –     | Inputs + controls disabled     |
 | `deleted-name` | string | – | Name for soft-deleted inputs |
+| `allow-hard-delete` | boolean | – | Show permanent delete button (X) |
+| `confirm-hard-delete` | boolean | – | Require confirmation before hard delete |
 
 #### Properties
 

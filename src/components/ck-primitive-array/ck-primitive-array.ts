@@ -124,6 +124,8 @@ export class CkPrimitiveArray extends HTMLElement {
       'maxlength',
       'pattern',
       'allow-duplicates',
+      'allow-hard-delete',
+      'confirm-hard-delete',
     ];
   }
 
@@ -939,76 +941,98 @@ export class CkPrimitiveArray extends HTMLElement {
       }
     });
 
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'ck-primitive-array__remove';
-    removeButton.setAttribute('data-action', 'remove');
-    removeButton.textContent = 'X';
-    removeButton.setAttribute('part', 'remove-button');
-    removeButton.disabled = isReadonly || isDisabled;
-    this.setAriaDisabled(removeButton, removeButton.disabled);
-
-    removeButton.addEventListener('click', () => {
-      if (this.hasAttribute('readonly') || this.hasAttribute('disabled')) {
-        return;
-      }
-      const removedIndex = this.getItemIndex(itemState.id);
-      const removedLabel = this.formatItemLabel(removedIndex, itemState.value);
-      // Remove from state
-      const index = this.itemsState.findIndex(item => item.id === itemState.id);
-      if (index !== -1) {
-        this.itemsState.splice(index, 1);
-      }
-      this.lastErrorAnnouncements.delete(itemState.id);
-
-      // Remove hidden input from light DOM
-      const hiddenInput = this.hiddenInputsMap.get(itemState.id);
-      if (hiddenInput) {
-        hiddenInput.remove();
-        this.hiddenInputsMap.delete(itemState.id);
-      }
-
-      // Remove from DOM
-      itemRow.remove();
-
-      // Update placeholder
-      this.updatePlaceholder();
-
-      // Re-index ARIA labels for remaining items
-      this.updateAriaLabels();
-
-      // Re-validate list constraints
-      this.validateListConstraints();
-
-      // Focus Add button
-      this.addButton?.focus();
-
-      // Dispatch change event
-      const allItems = this.items;
-      const activeItems = allItems
-        .filter(item => !item.deleted)
-        .map(item => item.value);
-      const deletedItems = allItems
-        .filter(item => item.deleted)
-        .map(item => item.value);
-
-      this.dispatchEvent(
-        new CustomEvent('change', {
-          bubbles: true,
-          detail: {
-            items: allItems,
-            active: activeItems,
-            deleted: deletedItems,
-          },
-        })
-      );
-
-      this.announce(`${removedLabel} removed`);
-    });
-
     itemRow.appendChild(input);
     itemRow.appendChild(deleteButton);
-    itemRow.appendChild(removeButton);
+
+    // Only create remove button if allow-hard-delete attribute is present
+    if (this.hasAttribute('allow-hard-delete')) {
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'ck-primitive-array__remove';
+      removeButton.setAttribute('data-action', 'remove');
+      removeButton.textContent = 'X';
+      removeButton.setAttribute('part', 'remove-button');
+      removeButton.disabled = isReadonly || isDisabled;
+      this.setAriaDisabled(removeButton, removeButton.disabled);
+
+      removeButton.addEventListener('click', () => {
+        if (this.hasAttribute('readonly') || this.hasAttribute('disabled')) {
+          return;
+        }
+
+        // Check for confirmation requirement
+        if (this.hasAttribute('confirm-hard-delete')) {
+          const confirmed = (globalThis as any).confirm?.(
+            `Are you sure you want to permanently delete "${itemState.value}"? This action cannot be undone.`
+          );
+          if (!confirmed) {
+            // User canceled - keep focus on remove button
+            removeButton.focus();
+            return;
+          }
+        }
+
+        const removedIndex = this.getItemIndex(itemState.id);
+        const removedLabel = this.formatItemLabel(
+          removedIndex,
+          itemState.value
+        );
+        // Remove from state
+        const index = this.itemsState.findIndex(
+          item => item.id === itemState.id
+        );
+        if (index !== -1) {
+          this.itemsState.splice(index, 1);
+        }
+        this.lastErrorAnnouncements.delete(itemState.id);
+
+        // Remove hidden input from light DOM
+        const hiddenInput = this.hiddenInputsMap.get(itemState.id);
+        if (hiddenInput) {
+          hiddenInput.remove();
+          this.hiddenInputsMap.delete(itemState.id);
+        }
+
+        // Remove from DOM
+        itemRow.remove();
+
+        // Update placeholder
+        this.updatePlaceholder();
+
+        // Re-index ARIA labels for remaining items
+        this.updateAriaLabels();
+
+        // Re-validate list constraints
+        this.validateListConstraints();
+
+        // Focus Add button
+        this.addButton?.focus();
+
+        // Dispatch change event
+        const allItems = this.items;
+        const activeItems = allItems
+          .filter(item => !item.deleted)
+          .map(item => item.value);
+        const deletedItems = allItems
+          .filter(item => item.deleted)
+          .map(item => item.value);
+
+        this.dispatchEvent(
+          new CustomEvent('change', {
+            bubbles: true,
+            detail: {
+              items: allItems,
+              active: activeItems,
+              deleted: deletedItems,
+            },
+          })
+        );
+
+        this.announce(`${removedLabel} removed`);
+      });
+
+      itemRow.appendChild(removeButton);
+    }
 
     return itemRow;
   }

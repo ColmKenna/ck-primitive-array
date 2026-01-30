@@ -217,6 +217,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('each row has a remove button with "X"', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a", "b"]');
       document.body.appendChild(el);
       el.connectedCallback();
@@ -1515,6 +1516,7 @@ describe('CkPrimitiveArray Component', () => {
   describe('Hard Remove', () => {
     test('should delete item permanently when remove clicked', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a", "b", "c"]');
       document.body.appendChild(el);
 
@@ -1541,6 +1543,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('should remove row from DOM when item removed', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a", "b", "c"]');
       document.body.appendChild(el);
 
@@ -1563,6 +1566,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('should move focus to Add button when remove clicked', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a", "b"]');
       document.body.appendChild(el);
 
@@ -1581,6 +1585,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('should dispatch change event when item removed', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a", "b", "c"]');
       document.body.appendChild(el);
 
@@ -1608,6 +1613,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('should remove hidden input when item has name attribute', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('name', 'tags');
       el.setAttribute('items', '["a", "b", "c"]');
       document.body.appendChild(el);
@@ -1635,6 +1641,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('should re-index remaining items after removal', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a", "b", "c"]');
       document.body.appendChild(el);
 
@@ -1658,6 +1665,299 @@ describe('CkPrimitiveArray Component', () => {
         (inputs?.[1] as HTMLInputElement).getAttribute('aria-label')
       ).toMatch(/Item.*[2c]/i);
 
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Hard Delete Controls - allow-hard-delete Attribute', () => {
+    test('remove button should be hidden when allow-hard-delete NOT present', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      expect(removeButtons?.length).toBe(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('remove button should be visible when allow-hard-delete present', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      expect(removeButtons?.length).toBe(2);
+
+      document.body.removeChild(el);
+    });
+
+    test('adding allow-hard-delete shows remove buttons dynamically', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      // Initially hidden
+      let removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      expect(removeButtons?.length).toBe(0);
+
+      // Add attribute
+      el.setAttribute('allow-hard-delete', '');
+
+      // Now visible
+      removeButtons = el.shadowRoot?.querySelectorAll('[data-action="remove"]');
+      expect(removeButtons?.length).toBe(2);
+
+      document.body.removeChild(el);
+    });
+
+    test('removing allow-hard-delete hides remove buttons dynamically', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      // Initially visible
+      let removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      expect(removeButtons?.length).toBe(2);
+
+      // Remove attribute
+      el.removeAttribute('allow-hard-delete');
+
+      // Now hidden
+      removeButtons = el.shadowRoot?.querySelectorAll('[data-action="remove"]');
+      expect(removeButtons?.length).toBe(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('keyboard navigation should skip hidden remove button', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      // Get focusable elements (should not include remove button)
+      const focusable = Array.from(
+        el.shadowRoot?.querySelectorAll<HTMLElement>(
+          'button, input, [tabindex]'
+        ) || []
+      ).filter(element => {
+        if (element.tabIndex < 0) return false;
+        const isDisabled = (element as HTMLButtonElement | HTMLInputElement)
+          .disabled;
+        return !isDisabled;
+      });
+
+      // Should have input, delete button, and add button (no remove button)
+      expect(focusable.length).toBe(3);
+      const hasRemoveButton = focusable.some(
+        el =>
+          el.hasAttribute('data-action') &&
+          el.getAttribute('data-action') === 'remove'
+      );
+      expect(hasRemoveButton).toBe(false);
+
+      document.body.removeChild(el);
+    });
+
+    test('remove button has proper aria-label when visible', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('items', '["apple"]');
+      document.body.appendChild(el);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      expect(removeButton).toBeTruthy();
+      expect(removeButton.getAttribute('aria-label')).toContain('Remove');
+      expect(removeButton.getAttribute('aria-label')).toContain('apple');
+
+      document.body.removeChild(el);
+    });
+
+    test('newly added items respect allow-hard-delete state', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      // Add item without allow-hard-delete
+      el.addItem('b');
+
+      let removeButtons = el.shadowRoot?.querySelectorAll(
+        '[data-action="remove"]'
+      );
+      expect(removeButtons?.length).toBe(0);
+
+      // Now enable allow-hard-delete and add another
+      el.setAttribute('allow-hard-delete', '');
+      el.addItem('c');
+
+      removeButtons = el.shadowRoot?.querySelectorAll('[data-action="remove"]');
+      expect(removeButtons?.length).toBe(3); // All items should have button
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Hard Delete Controls - confirm-hard-delete Attribute', () => {
+    test('no confirmation when confirm-hard-delete NOT present', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const confirmSpy = jest.spyOn(window, 'confirm');
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(el.items.length).toBe(1); // Item removed
+
+      confirmSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('confirmation shown when confirm-hard-delete present', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('confirm-hard-delete', '');
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      expect(confirmSpy).toHaveBeenCalled();
+      expect(confirmSpy).toHaveBeenCalledWith(
+        expect.stringContaining('permanently delete')
+      );
+
+      confirmSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('confirming dialog removes item', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('confirm-hard-delete', '');
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      expect(el.items.length).toBe(1);
+      expect(el.items[0].value).toBe('b');
+
+      confirmSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('canceling dialog keeps item', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('confirm-hard-delete', '');
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      expect(el.items.length).toBe(2); // Item NOT removed
+      expect(el.items[0].value).toBe('a');
+      expect(el.items[1].value).toBe('b');
+
+      confirmSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('focus returns to remove button after cancel', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('confirm-hard-delete', '');
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.focus();
+      removeButton.click();
+
+      // Focus should remain on remove button
+      expect(el.shadowRoot?.activeElement).toBe(removeButton);
+
+      confirmSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('confirmation message includes item value', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('confirm-hard-delete', '');
+      el.setAttribute('items', '["apple"]');
+      document.body.appendChild(el);
+
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('apple'));
+
+      confirmSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('no change event dispatched when canceled', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
+      el.setAttribute('confirm-hard-delete', '');
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+      const changeHandler = jest.fn();
+      el.addEventListener('change', changeHandler);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      // Should not fire change event when canceled
+      expect(changeHandler).not.toHaveBeenCalled();
+
+      confirmSpy.mockRestore();
       document.body.removeChild(el);
     });
   });
@@ -1877,6 +2177,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('should dispatch change event when item hard removed', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["item"]');
       document.body.appendChild(el);
 
@@ -2392,6 +2693,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('should delete hidden input when item is permanently removed', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('name', 'tags');
       el.setAttribute('items', '["a","b","c"]');
       document.body.appendChild(el);
@@ -3316,6 +3618,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('should show error when last item in required list is removed', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('required', '');
       el.setAttribute('items', '["apple"]');
       document.body.appendChild(el);
@@ -3855,6 +4158,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('disables remove buttons when disabled is set', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a","b"]');
       el.setAttribute('disabled', '');
       document.body.appendChild(el);
@@ -4023,6 +4327,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('disables remove buttons when readonly is set', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a","b"]');
       el.setAttribute('readonly', '');
       document.body.appendChild(el);
@@ -4108,6 +4413,7 @@ describe('CkPrimitiveArray Component', () => {
   describe('State Attributes - Dynamic Toggling', () => {
     test('adding disabled updates controls immediately', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       document.body.appendChild(el);
 
@@ -4140,6 +4446,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('removing disabled updates controls immediately', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       el.setAttribute('disabled', '');
       document.body.appendChild(el);
@@ -4173,6 +4480,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('adding readonly updates controls immediately', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       document.body.appendChild(el);
 
@@ -4205,6 +4513,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('removing readonly updates controls immediately', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       el.setAttribute('readonly', '');
       document.body.appendChild(el);
@@ -4238,6 +4547,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('combining disabled and readonly applies both effects', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       el.setAttribute('disabled', '');
       el.setAttribute('readonly', '');
@@ -4333,6 +4643,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('roles persist after add and remove operations', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       document.body.appendChild(el);
 
@@ -4424,6 +4735,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('remove button aria-label includes index and value', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["test"]');
       document.body.appendChild(el);
 
@@ -4439,6 +4751,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('labels update on edit', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["old"]');
       document.body.appendChild(el);
 
@@ -4468,6 +4781,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('labels re-index after removal', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a","b","c"]');
       document.body.appendChild(el);
 
@@ -4600,6 +4914,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('aria-disabled is set on disabled controls', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       el.setAttribute('disabled', '');
       document.body.appendChild(el);
@@ -4717,6 +5032,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('tab moves focus to the next row', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a","b"]');
       document.body.appendChild(el);
 
@@ -4834,6 +5150,7 @@ describe('CkPrimitiveArray Component', () => {
       document.body.appendChild(before);
 
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       document.body.appendChild(el);
 
@@ -4896,6 +5213,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('hard remove from middle focuses Add button', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a","b","c"]');
       document.body.appendChild(el);
 
@@ -4995,6 +5313,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('announces when item is removed', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       document.body.appendChild(el);
 
@@ -5396,6 +5715,7 @@ describe('CkPrimitiveArray Component', () => {
 
     test('remove button part exists', () => {
       const el = new CkPrimitiveArray();
+      el.setAttribute('allow-hard-delete', '');
       el.setAttribute('items', '["a"]');
       document.body.appendChild(el);
 
