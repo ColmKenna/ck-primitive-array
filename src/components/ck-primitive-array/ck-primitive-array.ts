@@ -17,6 +17,8 @@ export class CkPrimitiveArray extends HTMLElement {
     [];
   private nextItemId = 0;
   private lastItemsAttribute: string | null = null;
+  private hasInitializedItems = false;
+  private pendingItemsChange = false;
   private fieldsContainer: HTMLDivElement | null = null;
   private hiddenInputsMap: Map<string, HTMLInputElement> = new Map();
   private liveRegionElement: HTMLDivElement | null = null;
@@ -82,6 +84,9 @@ export class CkPrimitiveArray extends HTMLElement {
     }
     if (this.boundFocusHandler) {
       this.removeEventListener('focus', this.boundFocusHandler);
+    }
+    if (this.container && this.container.parentNode) {
+      this.container.parentNode.removeChild(this.container);
     }
     this.boundAddHandler = null;
     this.boundKeydownHandler = null;
@@ -167,12 +172,21 @@ export class CkPrimitiveArray extends HTMLElement {
     this.setAttribute('items', JSON.stringify(normalized));
   }
 
-  private parseItemsAttribute(itemsAttr: string | null): string[] | null {
-    if (!itemsAttr) return [];
+  private parseItemsAttribute(itemsAttr: string | null): string[] {
+    if (itemsAttr === null || itemsAttr === '') return [];
 
     try {
       const parsed = JSON.parse(itemsAttr);
-      if (!Array.isArray(parsed)) return [];
+      if (parsed === null) {
+        return [];
+      }
+      if (!Array.isArray(parsed)) {
+        (globalThis as any).console?.error(
+          'Items attribute must be a JSON array.',
+          parsed
+        );
+        return [];
+      }
 
       // Filter to primitives only and coerce to strings
       return parsed
@@ -186,7 +200,7 @@ export class CkPrimitiveArray extends HTMLElement {
         'Failed to parse items attribute:',
         error
       );
-      return null; // Return null to signal error
+      return [];
     }
   }
 
@@ -255,7 +269,6 @@ export class CkPrimitiveArray extends HTMLElement {
     if (itemsAttr === this.lastItemsAttribute) return;
 
     const parsed = this.parseItemsAttribute(itemsAttr);
-    if (parsed === null) return;
 
     this.lastItemsAttribute = itemsAttr;
     this.itemsState = parsed.map(value => ({
@@ -264,6 +277,11 @@ export class CkPrimitiveArray extends HTMLElement {
       deleted: false,
     }));
     this.lastErrorAnnouncements.clear();
+
+    if (this.hasInitializedItems && this.isConnected) {
+      this.pendingItemsChange = true;
+    }
+    this.hasInitializedItems = true;
   }
 
   private validateItemValue(
@@ -703,6 +721,7 @@ export class CkPrimitiveArray extends HTMLElement {
       this.listElement.className = 'ck-primitive-array__list';
       this.listElement.setAttribute('role', 'list');
       this.listElement.setAttribute('aria-label', 'Items');
+      this.listElement.setAttribute('part', 'list');
 
       this.placeholderElement = document.createElement('p');
       this.placeholderElement.className = 'ck-primitive-array__placeholder';
@@ -762,6 +781,16 @@ export class CkPrimitiveArray extends HTMLElement {
 
     // Attach form validation
     this.attachFormValidation();
+
+    if (this.pendingItemsChange) {
+      this.pendingItemsChange = false;
+      this.dispatchEvent(
+        new CustomEvent('change', {
+          bubbles: true,
+          detail: { items: this.items },
+        })
+      );
+    }
   }
 
   private createItemRow(itemState: {
@@ -778,15 +807,16 @@ export class CkPrimitiveArray extends HTMLElement {
 
     // Set part attribute for styling based on deleted state
     if (itemState.deleted) {
-      itemRow.setAttribute('part', 'item deleted');
+      itemRow.setAttribute('part', 'row deleted');
     } else {
-      itemRow.setAttribute('part', 'item');
+      itemRow.setAttribute('part', 'row');
     }
 
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'ck-primitive-array__input';
     input.value = itemState.value;
+    input.setAttribute('part', 'input');
 
     // Disable input if item is soft-deleted
     input.readOnly = isReadonly;
@@ -832,6 +862,7 @@ export class CkPrimitiveArray extends HTMLElement {
     deleteButton.type = 'button';
     deleteButton.className = 'ck-primitive-array__delete';
     deleteButton.setAttribute('data-action', 'delete');
+    deleteButton.setAttribute('part', 'delete-button');
     deleteButton.setAttribute(
       'aria-pressed',
       itemState.deleted ? 'true' : 'false'
@@ -855,9 +886,9 @@ export class CkPrimitiveArray extends HTMLElement {
 
       // Update part attribute on row
       if (itemState.deleted) {
-        itemRow.setAttribute('part', 'item deleted');
+        itemRow.setAttribute('part', 'row deleted');
       } else {
-        itemRow.setAttribute('part', 'item');
+        itemRow.setAttribute('part', 'row');
       }
 
       // Update input disabled state
@@ -913,6 +944,7 @@ export class CkPrimitiveArray extends HTMLElement {
     removeButton.className = 'ck-primitive-array__remove';
     removeButton.setAttribute('data-action', 'remove');
     removeButton.textContent = 'X';
+    removeButton.setAttribute('part', 'remove-button');
     removeButton.disabled = isReadonly || isDisabled;
     this.setAriaDisabled(removeButton, removeButton.disabled);
 

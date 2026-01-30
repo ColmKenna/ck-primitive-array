@@ -617,7 +617,7 @@ describe('CkPrimitiveArray Component', () => {
       document.body.removeChild(el);
     });
 
-    test('Invalid JSON preserves previous state', () => {
+    test('Invalid JSON resets to empty state', () => {
       const consoleSpy = jest
         .spyOn(globalThis.console, 'error')
         .mockImplementation();
@@ -633,24 +633,216 @@ describe('CkPrimitiveArray Component', () => {
       // Set invalid JSON
       el.setAttribute('items', 'invalid json');
 
-      // Items should remain the same
+      // Items should reset to empty
       items = el.shadowRoot?.querySelectorAll('.ck-primitive-array__item');
-      expect(items?.length).toBe(3);
+      expect(items?.length).toBe(0);
+      expect(el.items).toHaveLength(0);
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('Non-array JSON logs error and renders empty state', () => {
+      const consoleSpy = jest
+        .spyOn(globalThis.console, 'error')
+        .mockImplementation();
+
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '{"a": 1}');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(0);
+      expect(el.items).toHaveLength(0);
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('Number JSON logs error and renders empty state', () => {
+      const consoleSpy = jest
+        .spyOn(globalThis.console, 'error')
+        .mockImplementation();
+
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '123');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(0);
+      expect(el.items).toHaveLength(0);
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('Null JSON renders empty state without error', () => {
+      const consoleSpy = jest
+        .spyOn(globalThis.console, 'error')
+        .mockImplementation();
+
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', 'null');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(0);
+      expect(el.items).toHaveLength(0);
+      expect(consoleSpy).not.toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('Empty string attribute renders empty state without error', () => {
+      const consoleSpy = jest
+        .spyOn(globalThis.console, 'error')
+        .mockImplementation();
+
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(0);
+      expect(el.items).toHaveLength(0);
+      expect(consoleSpy).not.toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('Unicode values are preserved', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["café", "日本"]');
+      document.body.appendChild(el);
+
+      const items = el.shadowRoot?.querySelectorAll(
+        '.ck-primitive-array__item'
+      );
+      expect(items?.length).toBe(2);
       const input0 = items?.[0]?.querySelector(
         'input[type="text"]'
       ) as HTMLInputElement | null;
       const input1 = items?.[1]?.querySelector(
         'input[type="text"]'
       ) as HTMLInputElement | null;
-      const input2 = items?.[2]?.querySelector(
+      expect(input0?.value).toBe('café');
+      expect(input1?.value).toBe('日本');
+      expect(el.items[0].value).toBe('café');
+      expect(el.items[1].value).toBe('日本');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Items Attribute Re-parsing', () => {
+    test('replaces existing items when attribute is updated', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b", "c"]');
+      document.body.appendChild(el);
+
+      expect(el.items).toHaveLength(3);
+
+      el.setAttribute('items', '["x", "y"]');
+
+      expect(el.items).toHaveLength(2);
+      expect(el.items[0].value).toBe('x');
+      expect(el.items[1].value).toBe('y');
+
+      document.body.removeChild(el);
+    });
+
+    test('discards user edits when items attribute is updated', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["original"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'user edit';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      el.setAttribute('items', '["replaced"]');
+
+      const updatedInput = el.shadowRoot?.querySelector(
         'input[type="text"]'
       ) as HTMLInputElement | null;
-      expect(input0?.value).toBe('a');
-      expect(input1?.value).toBe('b');
-      expect(input2?.value).toBe('c');
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(el.items[0].value).toBe('replaced');
+      expect(updatedInput?.value).toBe('replaced');
 
-      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+
+    test('clears soft-deleted items when attribute is updated', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteButton.click();
+      expect(el.items[0].deleted).toBe(true);
+
+      el.setAttribute('items', '["x", "y"]');
+
+      expect(el.items.every(item => !item.deleted)).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('dispatches change event when items attribute is updated', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      el.setAttribute('items', '["x", "y"]');
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      const event = handler.mock.calls[0][0] as {
+        detail: {
+          items: Array<{ id: string; value: string; deleted: boolean }>;
+        };
+      };
+      expect(event.detail.items).toHaveLength(2);
+
+      el.removeEventListener('change', handler);
+      document.body.removeChild(el);
+    });
+
+    test('refreshes hidden inputs when items attribute is updated', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      let inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(2);
+
+      el.setAttribute('items', '["x", "y", "z"]');
+
+      inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(3);
+      expect((inputs[0] as HTMLInputElement).value).toBe('x');
+      expect((inputs[1] as HTMLInputElement).value).toBe('y');
+      expect((inputs[2] as HTMLInputElement).value).toBe('z');
+
       document.body.removeChild(el);
     });
   });
@@ -4813,6 +5005,416 @@ describe('CkPrimitiveArray Component', () => {
       addButton.click();
 
       expect(liveRegion.getAttribute('data-announce-seq')).toBe('2');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Rapid User Actions', () => {
+    test('handles rapid add button clicks', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+
+      for (let i = 0; i < 5; i += 1) {
+        addButton.click();
+      }
+
+      const rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      expect(rows?.length).toBe(5);
+      expect(el.items).toHaveLength(5);
+
+      document.body.removeChild(el);
+    });
+
+    test('handles rapid delete toggles', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+
+      deleteButton.click();
+      deleteButton.click();
+      deleteButton.click();
+
+      expect(el.items[0].deleted).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('handles rapid typing in input', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '[""]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      input.value = 'a';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      input.value = 'ab';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      input.value = 'abc';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(el.items[0].value).toBe('abc');
+
+      document.body.removeChild(el);
+    });
+
+    test('allows add during validation', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      addButton.click();
+
+      expect(el.items).toHaveLength(2);
+
+      document.body.removeChild(el);
+    });
+
+    test('allows delete while editing another item', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["first", "second"]');
+      document.body.appendChild(el);
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll('input[type="text"]') || []
+      ) as HTMLInputElement[];
+      inputs[0].value = 'edited';
+      inputs[0].dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const deleteButtons = Array.from(
+        el.shadowRoot?.querySelectorAll('[data-action="delete"]') || []
+      ) as HTMLButtonElement[];
+      deleteButtons[1].click();
+
+      expect(el.items[0].value).toBe('edited');
+      expect(el.items[1].deleted).toBe(true);
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Lifecycle (Connect/Disconnect)', () => {
+    test('attaches event listeners on connect', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      expect(el.items).toHaveLength(1);
+
+      document.body.removeChild(el);
+    });
+
+    test('removes event listeners on disconnect', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+
+      document.body.removeChild(el);
+      addButton.click();
+
+      expect(el.items).toHaveLength(0);
+    });
+
+    test('reattaches event listeners on reconnect', () => {
+      const container = document.createElement('div');
+      const el = new CkPrimitiveArray();
+      container.appendChild(el);
+      document.body.appendChild(container);
+
+      container.removeChild(el);
+      container.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      expect(el.items).toHaveLength(1);
+
+      document.body.removeChild(container);
+    });
+
+    test('preserves state across reconnect', () => {
+      const container = document.createElement('div');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b"]');
+      container.appendChild(el);
+      document.body.appendChild(container);
+
+      container.removeChild(el);
+      container.appendChild(el);
+
+      expect(el.items).toHaveLength(2);
+      expect(el.items[0].value).toBe('a');
+      expect(el.items[1].value).toBe('b');
+
+      document.body.removeChild(container);
+    });
+
+    test('preserves shadow DOM across reconnect', () => {
+      const container = document.createElement('div');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      container.appendChild(el);
+      document.body.appendChild(container);
+
+      container.removeChild(el);
+      container.appendChild(el);
+
+      const list = el.shadowRoot?.querySelector('[role="list"]');
+      const rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      expect(list).toBeTruthy();
+      expect(rows?.length).toBe(1);
+
+      document.body.removeChild(container);
+    });
+
+    test('recreates hidden inputs on reconnect', () => {
+      const container = document.createElement('div');
+      const el = new CkPrimitiveArray();
+      el.setAttribute('name', 'tags');
+      el.setAttribute('items', '["a", "b"]');
+      container.appendChild(el);
+      document.body.appendChild(container);
+
+      let inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(2);
+
+      container.removeChild(el);
+      container.appendChild(el);
+
+      inputs = el.querySelectorAll('[data-ckpa-fields] input');
+      expect(inputs).toHaveLength(2);
+
+      document.body.removeChild(container);
+    });
+  });
+
+  describe('Shadow DOM Encapsulation', () => {
+    test('external styles do not affect internals', () => {
+      const style = document.createElement('style');
+      style.textContent = 'button { background: rgb(255, 0, 0); }';
+      document.head.appendChild(style);
+
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const button = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(button.getRootNode()).toBe(el.shadowRoot);
+
+      const hasInternalStyles =
+        (
+          el.shadowRoot as unknown as {
+            adoptedStyleSheets?: unknown[];
+          }
+        ).adoptedStyleSheets?.length ||
+        el.shadowRoot?.querySelector('style[data-ck-primitive-array-fallback]');
+      expect(hasInternalStyles).toBeTruthy();
+
+      document.body.removeChild(el);
+      document.head.removeChild(style);
+    });
+
+    test('internal styles do not leak', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const outsideButton = document.createElement('button');
+      outsideButton.className = 'ck-primitive-array__remove';
+      document.body.appendChild(outsideButton);
+
+      const computed = window.getComputedStyle(outsideButton);
+      expect(computed.backgroundColor).not.toBe('rgb(215, 58, 73)');
+
+      document.body.removeChild(outsideButton);
+      document.body.removeChild(el);
+    });
+
+    test('CSS custom properties can be set', () => {
+      const el = new CkPrimitiveArray();
+      el.style.setProperty(
+        '--ck-primitive-array-background',
+        'rgb(10, 20, 30)'
+      );
+      document.body.appendChild(el);
+
+      const value = window
+        .getComputedStyle(el)
+        .getPropertyValue('--ck-primitive-array-background')
+        .replace(/\s/g, '');
+      expect(value).toBe('rgb(10,20,30)');
+
+      document.body.removeChild(el);
+    });
+
+    test('shadow root is open', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      expect(el.shadowRoot).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('CSS Parts Exposure', () => {
+    test('list part exists', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const list = el.shadowRoot?.querySelector('[role="list"]');
+      expect(list?.getAttribute('part')).toContain('list');
+
+      document.body.removeChild(el);
+    });
+
+    test('row part exists on each item', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a", "b"]');
+      document.body.appendChild(el);
+
+      const rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      rows?.forEach(row => {
+        expect(row.getAttribute('part')).toContain('row');
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('deleted part is applied to deleted rows', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteButton.click();
+
+      const row = el.shadowRoot?.querySelector('[role="listitem"]');
+      expect(row?.getAttribute('part')).toContain('deleted');
+
+      document.body.removeChild(el);
+    });
+
+    test('input part exists on inputs', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement | null;
+      expect(input?.getAttribute('part')).toContain('input');
+
+      document.body.removeChild(el);
+    });
+
+    test('delete button part exists', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement | null;
+      expect(deleteButton?.getAttribute('part')).toContain('delete-button');
+
+      document.body.removeChild(el);
+    });
+
+    test('remove button part exists', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement | null;
+      expect(removeButton?.getAttribute('part')).toContain('remove-button');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Memory Leaks', () => {
+    test('removes listeners after disconnect', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const handler = jest.fn();
+      el.addEventListener('change', handler);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+
+      document.body.removeChild(el);
+      addButton.click();
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    test('clears cached references on disconnect', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      document.body.removeChild(el);
+
+      const internal = el as unknown as {
+        container: unknown;
+        listElement: unknown;
+        addButton: unknown;
+        hiddenInputsMap: Map<string, unknown>;
+      };
+
+      expect(internal.container).toBeNull();
+      expect(internal.listElement).toBeNull();
+      expect(internal.addButton).toBeNull();
+      expect(internal.hiddenInputsMap.size).toBe(0);
+    });
+
+    test('handles large lists without errors', () => {
+      const el = new CkPrimitiveArray();
+      const largeList = Array.from({ length: 100 }, (_, i) => `item-${i}`);
+      el.setAttribute('items', JSON.stringify(largeList));
+      document.body.appendChild(el);
+
+      const rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      expect(rows?.length).toBe(100);
+      expect(el.items).toHaveLength(100);
 
       document.body.removeChild(el);
     });

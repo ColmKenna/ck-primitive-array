@@ -37,6 +37,16 @@ export const ckPrimitiveArrayCSS = `
   margin-top: 1rem;
 }
 
+.add-item {
+  border: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  background: #24292f;
+  color: #fff;
+}
+
 .ck-primitive-array__list {
   margin-top: 1rem;
   display: grid;

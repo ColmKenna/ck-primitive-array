@@ -88,7 +88,7 @@ Import and use in your HTML:
 <!-- Renders: "text", "42", "true", "more" -->
 ```
 
-**Error Handling**: Invalid JSON logs an error to console and preserves the previous valid state.
+**Error Handling**: Invalid JSON (or non-array JSON) logs an error and resets the list to empty. JSON `null` and empty string yield an empty list without logging errors.
 
 ##### `readonly`
 - **Type**: Boolean attribute
@@ -269,6 +269,10 @@ Hidden inputs automatically synchronize with component state across all operatio
 - ✅ **Undo**: When deleted item is restored (transitions back to `name`)
 - ✅ **Hard Remove**: When item is permanently removed (input deleted)
 - ✅ **Attribute Update**: When `items` attribute is re-parsed
+
+**Attribute Updates**:
+- Updating the `items` attribute replaces all existing items (including edits and soft-deletes)
+- A `change` event is dispatched after the new items render
 
 **Performance**:
 - Hidden inputs are **reused** on edits (no DOM replacement)
@@ -485,6 +489,29 @@ Buttons include matching labels (Delete/Restore/Remove) and update on edit or re
 When an input is invalid, it is linked to its error message via `aria-describedby`, pointing at the specific error element for that row. The list also sets `aria-required` when `required` is present.
 
 An `aria-live="polite"` region announces add/delete/restore/remove actions and validation errors.
+
+#### Styling with CSS Parts
+
+The component exposes styling hooks via `::part`:
+
+- `list` — list container
+- `row` — item row
+- `deleted` — applied to soft-deleted rows (with `row`)
+- `input` — item input
+- `delete-button` — soft delete/undo button
+- `remove-button` — hard remove button
+
+```css
+ck-primitive-array::part(row) {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+ck-primitive-array::part(input) {
+  border-color: #2563eb;
+}
+```
 
 ### JavaScript API
 

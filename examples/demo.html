@@ -161,6 +161,27 @@
         #dynamic-demo {
             margin-top: 1rem;
         }
+
+        ck-primitive-array.parts-demo::part(row) {
+            border: 1px dashed #f59e0b;
+            background: #fffbeb;
+            border-radius: 6px;
+            padding: 0.35rem;
+        }
+
+        ck-primitive-array.parts-demo::part(input) {
+            border-color: #f97316;
+        }
+
+        ck-primitive-array.parts-demo::part(delete-button) {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        ck-primitive-array.parts-demo::part(remove-button) {
+            background: #111827;
+            color: #f9fafb;
+        }
     </style>
 </head>
 <body>
@@ -1046,6 +1067,41 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
                 </div>
             </div>
         </div>
+
+        <div class="section" id="edge-cases-demo">
+            <h2>Phase 7: Edge Cases & Polish</h2>
+            <p>Unicode items, items re-parsing, and CSS parts are all supported.</p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Unicode Items</h3>
+                    <ck-primitive-array name="Unicode" items='["café", "日本"]'></ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        Unicode values are preserved when parsed.
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>Items Re-parsing</h3>
+                    <ck-primitive-array id="reparseDemo" name="Reparse" items='["draft", "todo"]'></ck-primitive-array>
+                    <button type="button" id="reparseButton" style="margin-top: 0.5rem;">Replace Items</button>
+                    <div id="reparseOutput" style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        Click "Replace Items" to re-parse the attribute.
+                    </div>
+                </div>
+                <div class="demo-item">
+                    <h3>CSS Parts Styling</h3>
+                    <ck-primitive-array class="parts-demo" name="Styled Parts" items='["Alpha", "Beta"]'></ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        Styled via <code>::part</code> selectors.
+                    </p>
+                </div>
+            </div>
+            <pre><code><span class="comment">// Re-parse items attribute</span>
+<span class="keyword">const</span> el = <span class="keyword">document</span>.getElementById(<span class="string">'reparseDemo'</span>);
+el.setAttribute(<span class="string">'items'</span>, <span class="string">'["replaced","fresh"]'</span>);
+
+<span class="comment">// Style rows via parts</span>
+ck-primitive-array::part(row) { <span class="comment">/* ... */</span> }</code></pre>
+        </div>
     </div>
 
     <script type="module">
@@ -1064,6 +1120,25 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
         colorInput.addEventListener('input', (e) => {
             dynamicComponent.color = e.target.value;
         });
+
+        // Setup items re-parsing demo
+        const reparseDemo = document.getElementById('reparseDemo');
+        const reparseButton = document.getElementById('reparseButton');
+        const reparseOutput = document.getElementById('reparseOutput');
+
+        if (reparseDemo && reparseButton && reparseOutput) {
+            const formatValues = (items) =>
+                (items || []).map(item => item.value).join(', ') || '(empty)';
+
+            reparseDemo.addEventListener('change', (e) => {
+                const items = e.detail?.items || [];
+                reparseOutput.textContent = `Change event: ${formatValues(items)}`;
+            });
+
+            reparseButton.addEventListener('click', () => {
+                reparseDemo.setAttribute('items', '["replaced","fresh","updated"]');
+            });
+        }
 
         // Setup programmatic creation button
         const createBtn = document.getElementById('createBtn');

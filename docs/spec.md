@@ -66,9 +66,13 @@ The `items` attribute accepts a JSON array and applies the following parsing log
    - Null: `null` → filtered out
    - Undefined: `undefined` → filtered out
 4. **Error Handling**:
-   - Invalid JSON logs error to console
-   - Previous valid state is preserved on parse error
-   - No items rendered if no previous state exists
+   - Invalid JSON logs error to console and resets to empty state
+   - Non-array JSON (object/number/boolean/string) logs error and resets to empty state
+   - JSON `null` or empty string yields an empty state without logging errors
+
+**Re-parsing Behavior**:
+- Updating the `items` attribute replaces all existing items (including edits and soft-delete state)
+- A `change` event is dispatched after the re-parse completes with `detail.items` reflecting the new list
 
 ### Methods
 
@@ -290,7 +294,7 @@ Each item row contains a delete button that toggles between delete and undo stat
 3. Button text changes to "Undo"
 4. Button `aria-pressed` becomes `"true"`
 5. Input becomes disabled (`input.disabled = true`)
-6. Row gains `part="item deleted"` attribute
+6. Row gains `part="row deleted"` attribute
 7. Hidden input name changes to `deleted-{name}[]`
 8. Focus remains on button (now showing "Undo")
 9. `change` event dispatches with separate `active` and `deleted` arrays
@@ -301,7 +305,7 @@ Each item row contains a delete button that toggles between delete and undo stat
 3. Button text changes to "Delete"
 4. Button `aria-pressed` becomes `"false"`
 5. Input becomes enabled (`input.disabled = false`)
-6. Row has `part="item"` attribute
+6. Row has `part="row"` attribute
 7. Hidden input name changes back to `{name}[]`
 8. Focus remains on button (now showing "Delete")
 9. `change` event dispatches with item in `active` array
@@ -335,6 +339,34 @@ Deleted items receive styling hooks via the `part` attribute:
 ck-primitive-array::part(deleted) {
   opacity: 0.5;
   text-decoration: line-through;
+}
+```
+
+### CSS Parts
+
+The component exposes styling hooks via `::part`:
+
+- `list`: The list container
+- `row`: Each item row
+- `deleted`: Applied to rows that are soft-deleted (in addition to `row`)
+- `input`: Item text input
+- `delete-button`: Soft delete / undo button
+- `remove-button`: Hard remove button
+
+**Example**:
+
+```css
+ck-primitive-array::part(list) {
+  gap: 0.75rem;
+}
+
+ck-primitive-array::part(row) {
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+
+ck-primitive-array::part(input) {
+  border-color: #8b5cf6;
 }
 ```
 
@@ -958,7 +990,7 @@ const removed = formData.getAll('removed[]'); // ['d']
 #### `attributeChangedCallback(name, oldValue, newValue)`
 - Observes: `name`, `color`, `items`, `readonly`, `disabled`, `deleted-name`, `required`, `min`, `max`, `minlength`, `maxlength`, `pattern`, `allow-duplicates`
 - Triggers re-render when observed attributes change
-- For `items`, preserves previous state if new value is invalid JSON
+- For `items`, invalid/non-array JSON logs an error and resets to empty state
 
 ## Rendering
 
@@ -970,13 +1002,13 @@ const removed = formData.getAll('removed[]'); // ['d']
   <div class="ck-primitive-array__controls">
     <button type="button" class="add-item" aria-label="Add item">Add</button>
   </div>
-  <div class="ck-primitive-array__list" role="list" aria-label="Items">
+  <div class="ck-primitive-array__list" role="list" aria-label="Items" part="list">
     <p class="ck-primitive-array__placeholder">No items</p>
     <!-- Items rendered here when items attribute is set -->
-    <div class="ck-primitive-array__item" role="listitem">
-      <input type="text" value="${item.value}" aria-label="Item 1: ${item.value}" />
-      <button type="button" data-action="delete" aria-label="Delete Item 1: ${item.value}">Delete</button>
-      <button type="button" data-action="remove" aria-label="Remove Item 1: ${item.value}">X</button>
+    <div class="ck-primitive-array__item" role="listitem" part="row">
+      <input type="text" value="${item.value}" aria-label="Item 1: ${item.value}" part="input" />
+      <button type="button" data-action="delete" aria-label="Delete Item 1: ${item.value}" part="delete-button">Delete</button>
+      <button type="button" data-action="remove" aria-label="Remove Item 1: ${item.value}" part="remove-button">X</button>
     </div>
   </div>
   <div class="ck-primitive-array__live" aria-live="polite" aria-atomic="true" role="status"></div>
@@ -1048,7 +1080,7 @@ element.setAttribute('color', 'blue');
 19. ✅ Nested arrays are ignored (1.3.5)
 20. ✅ Null values are ignored (1.3.6)
 21. ✅ Invalid JSON logs error (1.3.7)
-22. ✅ Invalid JSON preserves previous state (1.3.8)
+22. ✅ Invalid JSON resets to empty state (1.3.8)
 
 23. ✅ Add button creates new item with empty input (1.5.1)
 24. ✅ New item input receives focus (1.5.2)

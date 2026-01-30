@@ -105,6 +105,13 @@ Invoked when:
 
 **Note**: Does not trigger on attribute changes - those use `attributeChangedCallback`
 
+#### Disconnection Phase
+
+On disconnect, the component:
+- Removes event listeners attached to host and shadow root
+- Removes the rendered container from the shadow root to avoid duplicate UI on reconnect
+- Clears cached element references and hidden input state
+
 #### Attribute Observation
 
 ```typescript
@@ -134,6 +141,13 @@ attributeChangedCallback(name: string, oldValue: string, newValue: string) {
 ```
 
 **Optimization**: Only re-render if value actually changed
+
+#### Items Attribute Parsing
+
+- Parses `items` as a JSON array of primitives (string/number/boolean)
+- Invalid JSON or non-array JSON logs an error and resets to empty state
+- JSON `null` or empty string yields an empty state without errors
+- Updating `items` replaces all existing items and dispatches a `change` event after render
 
 ### Property Accessors
 
@@ -179,12 +193,12 @@ private render() {
   <div class="ck-primitive-array__controls">
     <button type="button" class="add-item" aria-label="Add item">Add</button>
   </div>
-  <div class="ck-primitive-array__list" role="list" aria-label="Items">
+  <div class="ck-primitive-array__list" role="list" aria-label="Items" part="list">
     <p class="ck-primitive-array__placeholder">No items</p>
-    <div class="ck-primitive-array__item" role="listitem">
-      <input type="text" value="${item.value}" aria-label="Item 1: ${item.value}" />
-      <button type="button" data-action="delete" aria-label="Delete Item 1: ${item.value}">Delete</button>
-      <button type="button" data-action="remove" aria-label="Remove Item 1: ${item.value}">X</button>
+    <div class="ck-primitive-array__item" role="listitem" part="row">
+      <input type="text" value="${item.value}" aria-label="Item 1: ${item.value}" part="input" />
+      <button type="button" data-action="delete" aria-label="Delete Item 1: ${item.value}" part="delete-button">Delete</button>
+      <button type="button" data-action="remove" aria-label="Remove Item 1: ${item.value}" part="remove-button">X</button>
     </div>
   </div>
   <div class="ck-primitive-array__live" aria-live="polite" aria-atomic="true" role="status"></div>
@@ -194,6 +208,13 @@ private render() {
 
 **Naming Convention**: BEM-style class names  
 **Dynamic Content**: `name` is dynamic; items render as editable rows based on internal item state
+
+### CSS Parts
+
+`::part` hooks:
+
+- `list`, `row`, `deleted`, `input`, `delete-button`, `remove-button`
+- Deleted rows use `part="row deleted"`
 
 ### State Attributes (Readonly + Disabled)
 

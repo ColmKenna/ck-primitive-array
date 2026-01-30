@@ -49,25 +49,32 @@ import { CkPrimitiveArray } from '@colmkenna/ck-primitive-array';
 
 ### CkPrimitiveArray Component
 
-A simple greeting component with customizable name and color.
+An editable list component for primitive values (strings, numbers, booleans) with add/remove, soft delete/undo, validation, form participation via hidden inputs, and accessibility support.
 
 ```html
 <!-- Basic usage -->
 <ck-primitive-array></ck-primitive-array>
 
-<!-- With custom name -->
-<ck-primitive-array name="Developer"></ck-primitive-array>
+<!-- Declarative items -->
+<ck-primitive-array items='["Apple", "Banana"]'></ck-primitive-array>
 
-<!-- With custom name and color -->
-<ck-primitive-array name="Developer" color="#ff6b6b"></ck-primitive-array>
+<!-- Form-friendly list (name also used for header text) -->
+<ck-primitive-array name="tags" items='["alpha", "beta"]'></ck-primitive-array>
+
+<!-- Custom header color -->
+<ck-primitive-array name="Tasks" color="#ff6b6b" items='["Plan", "Build"]'></ck-primitive-array>
 ```
 
 #### Attributes
 
 | Attribute | Type   | Default | Description                    |
 |-----------|--------|---------|--------------------------------|
-| `name`    | string | "World" | The name to display in the greeting |
-| `color`   | string | "#333"  | Text color for the message     |
+| `name`    | string | "World" | Header text + name for active hidden inputs |
+| `color`   | string | "#333"  | Text color for the header      |
+| `items`   | JSON   | `[]`    | JSON array of primitive values |
+| `readonly`| boolean | –     | Inputs read-only, controls disabled |
+| `disabled`| boolean | –     | Inputs + controls disabled     |
+| `deleted-name` | string | – | Name for soft-deleted inputs |
 
 #### Properties
 
@@ -76,7 +83,8 @@ The component also supports JavaScript property access:
 ```javascript
 const primitiveArray = document.querySelector('ck-primitive-array');
 primitiveArray.name = 'New Name';
-primitiveArray.color = '#blue';
+primitiveArray.color = '#0066cc';
+primitiveArray.items = ['one', 'two', 'three'];
 ```
 
 ## 🛠️ Development
