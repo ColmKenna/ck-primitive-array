@@ -2476,4 +2476,740 @@ describe('CkPrimitiveArray Component', () => {
       document.body.removeChild(form);
     });
   });
+
+  describe('Validation - Empty and Whitespace Rejection', () => {
+    test('should show error when input is empty string', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      const errorMsg = el.shadowRoot?.querySelector('[data-error]');
+      expect(errorMsg).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should show error when input is whitespace only', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '   ';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      const errorMsg = el.shadowRoot?.querySelector('[data-error]');
+      expect(errorMsg).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should display error message below input', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const itemRow = el.shadowRoot?.querySelector('[role="listitem"]');
+      const errorMsg = itemRow?.querySelector('[data-error]');
+      expect(errorMsg).toBeTruthy();
+      expect(errorMsg?.textContent).toContain('required');
+
+      document.body.removeChild(el);
+    });
+
+    test('should apply invalid CSS class on validation error', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.classList.contains('has-error')).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('should clear error when valid value entered', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Set invalid
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      // Set valid
+      input.value = 'valid value';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Validation - Duplicate Detection', () => {
+    test('should show error for duplicate values by default', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+
+      // Change second item to match first
+      inputs[1].value = 'apple';
+      inputs[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(inputs[1].getAttribute('aria-invalid')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should permit duplicates with allow-duplicates attribute', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('allow-duplicates', '');
+      el.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+
+      inputs[1].value = 'apple';
+      inputs[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(inputs[1].getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should be case-sensitive by default', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["Apple"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+
+      inputs[1].value = 'apple';
+      inputs[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // Should not be invalid because "apple" != "Apple"
+      expect(inputs[1].getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should exclude soft-deleted items from duplicate check', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+
+      inputs[1].value = 'apple';
+      inputs[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // Should not be invalid because first item is soft-deleted
+      expect(inputs[1].getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should clear duplicate error when value becomes unique', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+
+      inputs[1].value = 'apple';
+      inputs[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(inputs[1].getAttribute('aria-invalid')).toBe('true');
+
+      inputs[1].value = 'cherry';
+      inputs[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(inputs[1].getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should update error when allow-duplicates attribute changes', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+
+      inputs[1].value = 'apple';
+      inputs[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(inputs[1].getAttribute('aria-invalid')).toBe('true');
+
+      el.setAttribute('allow-duplicates', '');
+      inputs[1].dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(inputs[1].getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Validation - Minlength and Maxlength', () => {
+    test('should show error when value is below minlength', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'ab';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should be valid when value meets minlength', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'abc';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should show error when value exceeds maxlength', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('maxlength', '5');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'abcdef';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should be valid when value is at maxlength', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('maxlength', '5');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'abcde';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should validate both minlength and maxlength together', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '2');
+      el.setAttribute('maxlength', '5');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+
+      // Too short
+      input.value = 'a';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      // Valid
+      input.value = 'abc';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      // Too long
+      input.value = 'abcdef';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should show length validation error message', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'ab';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-error]');
+      expect(errorMsg?.textContent).toContain('3');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Validation - Pattern', () => {
+    test('should be valid when value matches pattern', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('pattern', '[a-z]+');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'abc';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should show error when value does not match pattern', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('pattern', '[a-z]+');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'abc123';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should anchor pattern to match entire value', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('pattern', 'test');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+
+      input.value = 'testing';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      input.value = 'test';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should support complex regex patterns', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('pattern', '\\d{3}-\\d{4}');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+
+      input.value = '123-4567';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      input.value = '123-456';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should ignore pattern for empty value and show empty error', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('pattern', '[a-z]+');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      // Should show empty error, not pattern error
+      const errorMsg = el.shadowRoot?.querySelector('[data-error]');
+      expect(errorMsg?.textContent).not.toContain('format');
+      expect(errorMsg?.textContent).toContain('required');
+
+      document.body.removeChild(el);
+    });
+
+    test('should log error for invalid regex pattern', () => {
+      const consoleSpy = jest
+        .spyOn(globalThis.console, 'error')
+        .mockImplementation();
+
+      const el = new CkPrimitiveArray();
+      el.setAttribute('pattern', '[invalid');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'test';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(consoleSpy).toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Validation - Required Attribute', () => {
+    test('should show error when required and list is empty', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('required', '');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-required-error]');
+      expect(errorMsg).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should be valid when required and has at least one active item', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('required', '');
+      el.setAttribute('items', '["apple"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-required-error]');
+      expect(errorMsg).not.toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should show error when required and all items are soft-deleted', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('required', '');
+      el.setAttribute('items', '["apple"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-required-error]');
+      expect(errorMsg).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should clear error when item is added to required empty list', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('required', '');
+      document.body.appendChild(el);
+
+      let errorMsg = el.shadowRoot?.querySelector('[data-required-error]');
+      expect(errorMsg).toBeTruthy();
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'apple';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      errorMsg = el.shadowRoot?.querySelector('[data-required-error]');
+      expect(errorMsg).not.toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should show error when last item in required list is removed', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('required', '');
+      el.setAttribute('items', '["apple"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const removeBtn = el.shadowRoot?.querySelector(
+        '[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeBtn.click();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-required-error]');
+      expect(errorMsg).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should prevent form submission when required and empty', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('required', '');
+      el.setAttribute('name', 'items');
+      const form = document.createElement('form');
+      form.appendChild(el);
+      document.body.appendChild(form);
+      el.connectedCallback();
+
+      const submitEvent = new window.Event('submit', { bubbles: true });
+      const preventDefaultSpy = jest.spyOn(submitEvent, 'preventDefault');
+
+      form.dispatchEvent(submitEvent);
+
+      expect(preventDefaultSpy).toHaveBeenCalled();
+
+      document.body.removeChild(form);
+    });
+  });
+
+  describe('Validation - Min and Max Item Count', () => {
+    test('should show error when item count is below min', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('min', '2');
+      el.setAttribute('items', '["apple"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-min-error]');
+      expect(errorMsg).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should be valid when item count is at min', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('min', '2');
+      el.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-min-error]');
+      expect(errorMsg).not.toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should show error when item count exceeds max', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('max', '3');
+      el.setAttribute('items', '["apple", "banana", "cherry", "date"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-max-error]');
+      expect(errorMsg).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should be valid when item count is at max', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('max', '3');
+      el.setAttribute('items', '["apple", "banana", "cherry"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-max-error]');
+      expect(errorMsg).not.toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should disable Add button when at max items', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('max', '2');
+      el.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const addBtn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(addBtn.disabled).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('should count only active items for min validation', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('min', '2');
+      el.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const deleteBtn = el.shadowRoot?.querySelector(
+        '[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteBtn.click();
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-min-error]');
+      expect(errorMsg).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+  });
 });

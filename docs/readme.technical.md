@@ -510,6 +510,312 @@ expect(changeHandler).toHaveBeenCalledTimes(1);
 - ✅ No global state references
 - ✅ Closure variables cleaned up with DOM
 
+## Validation System (Phase 4)
+
+### Overview
+
+The validation system provides both item-level and list-level constraint checking with comprehensive error messaging and accessibility support. Validation is always performed on input events and state changes, preventing invalid data entry.
+
+### Item-Level Validation
+
+#### validateItemValue() Method
+
+Located in the component class:
+
+```typescript
+private validateItemValue(value: string, itemState): string | null {
+  // 1. Empty/whitespace check
+  if (value.trim() === '') {
+    return 'This field is required.';
+  }
+
+  // 2. Minimum length check
+  const minLength = this.getAttribute('minlength');
+  if (minLength) {
+    const min = parseInt(minLength, 10);
+    if (value.length < min) {
+      return `Must be at least ${min} characters.`;
+    }
+  }
+
+  // 3. Maximum length check
+  const maxLength = this.getAttribute('maxlength');
+  if (maxLength) {
+    const max = parseInt(maxLength, 10);
+    if (value.length > max) {
+      return `Must be no more than ${max} characters.`;
+    }
+  }
+
+  // 4. Pattern validation
+  const patternAttr = this.getAttribute('pattern');
+  if (patternAttr) {
+    try {
+      const regex = new RegExp(`^${patternAttr}$`);
+      if (!regex.test(value)) {
+        return 'Invalid format.';
+      }
+    } catch (e) {
+      console.error('Invalid regex pattern:', patternAttr);
+    }
+  }
+
+  // 5. Duplicate detection
+  const allowDuplicates = this.hasAttribute('allow-duplicates');
+  if (!allowDuplicates) {
+    const isDuplicate = this.items.some(item => 
+      item.id !== itemState.id && 
+      item.value.toLowerCase() === value.toLowerCase() && 
+      !item.deleted
+    );
+    if (isDuplicate) {
+      return 'This value already exists.';
+    }
+  }
+
+  return null;
+}
+```
+
+**Validation Order**:
+1. **Empty/Whitespace**: Always checked first
+2. **Length Constraints**: Minlength, then maxlength
+3. **Pattern**: Regex validation (anchored to full value with `^...$`)
+4. **Duplicates**: Only checked if not allowing duplicates
+
+**Attributes Checked**:
+- `minlength`: Minimum character count
+- `maxlength`: Maximum character count
+- `pattern`: Regex pattern (automatically anchored)
+- `allow-duplicates`: Boolean toggle for duplicate rejection
+
+**Return Value**:
+- Returns error message string if validation fails
+- Returns `null` if all checks pass
+
+#### commitInputValue() Integration
+
+The `commitInputValue()` method always calls `validateItemValue()` on every input event:
+
+```typescript
+const error = this.validateItemValue(value, itemState);
+if (error) {
+  // Create/update error display
+  const errorDiv = itemRow.querySelector('[data-error]') || 
+                   document.createElement('div');
+  errorDiv.setAttribute('data-error', error);
+  errorDiv.textContent = error;
+  itemRow.appendChild(errorDiv);
+
+  // Set accessibility attributes
+  input.setAttribute('aria-invalid', 'true');
+  input.classList.add('has-error');
+  itemRow.classList.add('has-error');
+} else {
+  // Clear validation errors
+  const errorDiv = itemRow.querySelector('[data-error]');
+  if (errorDiv) errorDiv.remove();
+  input.removeAttribute('aria-invalid');
+  input.classList.remove('has-error');
+  itemRow.classList.remove('has-error');
+}
+```
+
+**Error Display**:
+- `[data-error]` div with error message text
+- `aria-invalid="true"` on input for accessibility
+- `.has-error` class on both input and itemRow for styling
+
+### List-Level Validation
+
+#### validateListConstraints() Method
+
+Validates list-level constraints after state changes:
+
+```typescript
+private validateListConstraints(): void {
+  const activeItems = this.items.filter(item => !item.deleted);
+  
+  // 1. Required constraint
+  const isRequired = this.hasAttribute('required');
+  if (isRequired && activeItems.length === 0) {
+    this.showListError('[data-required-error]', 'At least one item is required.');
+  } else {
+    this.hideListError('[data-required-error]');
+  }
+
+  // 2. Minimum count constraint
+  const minAttr = this.getAttribute('min');
+  if (minAttr) {
+    const min = parseInt(minAttr, 10);
+    if (activeItems.length < min) {
+      this.showListError('[data-min-error]', 
+        `Must have at least ${min} items.`);
+    } else {
+      this.hideListError('[data-min-error]');
+    }
+  }
+
+  // 3. Maximum count constraint
+  const maxAttr = this.getAttribute('max');
+  if (maxAttr) {
+    const max = parseInt(maxAttr, 10);
+    if (activeItems.length > max) {
+      this.showListError('[data-max-error]', 
+        `Cannot have more than ${max} items.`);
+    } else {
+      this.hideListError('[data-max-error]');
+    }
+    
+    // Disable add button at max
+    if (this.addButton) {
+      this.addButton.disabled = activeItems.length >= max;
+    }
+  }
+}
+```
+
+**Constraints Checked**:
+- `required`: At least one active item
+- `min`: Minimum number of active items
+- `max`: Maximum number of active items (disables add button)
+
+**When Called**:
+- `addItem()` - after adding new item
+- Delete button handler - after soft delete toggle
+- Remove button handler - after hard remove
+- `attributeChangedCallback()` - when attributes change
+
+### Form Validation Integration
+
+#### checkValidity() Method
+
+```typescript
+public checkValidity(): boolean {
+  // 1. Check required constraint
+  if (this.hasAttribute('required')) {
+    const activeItems = this.items.filter(item => !item.deleted);
+    if (activeItems.length === 0) return false;
+  }
+
+  // 2. Check min constraint
+  const minAttr = this.getAttribute('min');
+  if (minAttr) {
+    const min = parseInt(minAttr, 10);
+    const activeItems = this.items.filter(item => !item.deleted);
+    if (activeItems.length < min) return false;
+  }
+
+  // 3. Check max constraint
+  const maxAttr = this.getAttribute('max');
+  if (maxAttr) {
+    const max = parseInt(maxAttr, 10);
+    const activeItems = this.items.filter(item => !item.deleted);
+    if (activeItems.length > max) return false;
+  }
+
+  // 4. Check individual item validation
+  for (const itemState of this.items) {
+    if (!itemState.deleted) {
+      const error = this.validateItemValue(itemState.value, itemState);
+      if (error) return false;
+    }
+  }
+
+  return true;
+}
+```
+
+**Purpose**: Called by parent form before submission to verify all constraints
+
+#### attachFormValidation() Method
+
+```typescript
+private attachFormValidation(): void {
+  const form = this.closest('form');
+  if (!form) return;
+
+  // Prevent duplicate listener attachment
+  const key = '__ckpaValidationAttached';
+  if ((form as any)[key]) return;
+  (form as any)[key] = true;
+
+  form.addEventListener('submit', (e: SubmitEvent) => {
+    if (!this.checkValidity()) {
+      e.preventDefault();
+    }
+  });
+}
+```
+
+**Design**:
+- Uses flag on form object to prevent duplicate listeners
+- Called from `connectedCallback()`
+- Only attaches if component is inside a form
+
+### Accessibility Support
+
+#### ARIA Attributes
+
+```typescript
+// aria-invalid on items
+input.setAttribute('aria-invalid', 'true');
+
+// aria-label with dynamic value
+input.setAttribute('aria-label', `Item: ${input.value}`);
+```
+
+**Screen Reader Announcements**:
+- Invalid state announced via `aria-invalid`
+- Error message available in DOM
+- Item context via aria-label
+
+### Error Message Styling
+
+Applications can style validation errors:
+
+```css
+/* Item with error */
+.ck-primitive-array__item.has-error input {
+  border-color: #d32f2f;
+  background-color: #ffebee;
+}
+
+/* Error message display */
+.ck-primitive-array__item [data-error] {
+  display: block;
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+/* List-level error messages */
+[data-required-error],
+[data-min-error],
+[data-max-error] {
+  color: #d32f2f;
+  margin: 0.5rem 0;
+}
+```
+
+### Test Coverage
+
+Validation system has 26 tests covering:
+- Empty and whitespace rejection (5 tests)
+- Duplicate detection (6 tests)
+- Length constraints (6 tests)
+- Pattern validation (6 tests)
+- Required attribute (6 tests)
+- Min/max item count (6 tests)
+
+All tests verify:
+- ✅ Error messages display
+- ✅ aria-invalid attributes set
+- ✅ CSS classes applied
+- ✅ Form submission prevented
+- ✅ Error clearing on valid input
+- ✅ Dynamic constraint behavior
+
 ## Future Enhancements
 
 ### Potential Features

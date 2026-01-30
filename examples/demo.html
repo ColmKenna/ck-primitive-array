@@ -841,6 +841,161 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
 <span class="keyword">const</span> deletedTags = formData.getAll(<span class="string">'removed-tags[]'</span>);
 <span class="keyword">console</span>.log(<span class="string">'Deleted:'</span>, deletedTags);</code></pre>
         </div>
+
+        <!-- Validation -->
+        <div class="section">
+            <h2>16. Validation & Constraints</h2>
+            <p>The component supports comprehensive validation including empty/whitespace rejection, duplicates, length constraints, pattern matching, and list-level constraints.</p>
+
+            <h3>Empty & Whitespace Rejection</h3>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Default Behavior</h3>
+                    <ck-primitive-array
+                        id="emptyValidationDemo"
+                        name="default"
+                        items='[""]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Empty inputs show validation error with aria-invalid=true
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>Whitespace Only</h3>
+                    <ck-primitive-array
+                        name="whitespace"
+                        items='["   "]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Whitespace-only inputs are treated as empty
+                    </p>
+                </div>
+            </div>
+
+            <h3>Duplicate Detection</h3>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Rejects Duplicates (Default)</h3>
+                    <ck-primitive-array
+                        id="noDupsDemo"
+                        name="noDups"
+                        items='["apple","banana"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Try editing banana to apple - error appears
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>Allow Duplicates</h3>
+                    <ck-primitive-array
+                        allow-duplicates
+                        name="allowDups"
+                        items='["apple","banana"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 With <code>allow-duplicates</code> attribute, no error
+                    </p>
+                </div>
+            </div>
+
+            <h3>Length Constraints</h3>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>minlength="3"</h3>
+                    <ck-primitive-array
+                        minlength="3"
+                        name="minLength"
+                        items='["ab"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Values shorter than 3 chars show error
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>maxlength="5"</h3>
+                    <ck-primitive-array
+                        maxlength="5"
+                        name="maxLength"
+                        items='["toolong"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Values longer than 5 chars show error
+                    </p>
+                </div>
+            </div>
+
+            <h3>Pattern Matching</h3>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Email Pattern</h3>
+                    <ck-primitive-array
+                        pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}"
+                        name="emails"
+                        items='["test@example.com","invalid-email"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Edit second item - format must match email pattern
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>Hex Color Pattern</h3>
+                    <ck-primitive-array
+                        pattern="[0-9a-f]{3}([0-9a-f]{3})?"
+                        name="colors"
+                        items='["fff","FF5500"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Only 3 or 6 digit hex codes match pattern
+                    </p>
+                </div>
+            </div>
+
+            <h3>List-Level Constraints</h3>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>required</h3>
+                    <ck-primitive-array
+                        required
+                        name="required"
+                        items='[]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 At least one active item required
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>min="2" max="4"</h3>
+                    <ck-primitive-array
+                        min="2"
+                        max="4"
+                        name="minmax"
+                        items='["item1"]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Must have 2-4 active items; Add button disables at max
+                    </p>
+                </div>
+            </div>
+
+            <h3>Validation Methods</h3>
+            <pre><code><span class="comment">// Check validity before submission</span>
+<span class="keyword">const</span> element = <span class="keyword">document</span>.querySelector(<span class="string">'ck-primitive-array'</span>);
+<span class="keyword">if</span> (!element.<span class="highlight">checkValidity</span>()) {
+  alert(<span class="string">'Please fix validation errors'</span>);
+  <span class="keyword">return</span>;
+}
+
+<span class="comment">// Attributes support all constraints:</span>
+<span class="keyword">&lt;ck-primitive-array</span>
+  <span class="highlight">required</span>
+  <span class="highlight">min</span>=<span class="string">"2"</span>
+  <span class="highlight">max</span>=<span class="string">"5"</span>
+  <span class="highlight">minlength</span>=<span class="string">"3"</span>
+  <span class="highlight">maxlength</span>=<span class="string">"20"</span>
+  <span class="highlight">pattern</span>=<span class="string">"^[a-z]+$"</span>
+  <span class="highlight">allow-duplicates</span>
+<span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
+        </div>
     </div>
 
     <script type="module">

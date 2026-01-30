@@ -277,18 +277,170 @@ Hidden inputs ensure that form submissions always include the current component 
 
 #### Validation
 
-Empty values are automatically flagged:
+The component provides comprehensive validation covering item-level and list-level constraints with full accessibility support.
+
+##### Item-Level Validation
+
+Each item value is validated against multiple constraints:
+
+**1. Empty & Whitespace Rejection**
+
+By default, empty or whitespace-only values are rejected:
+```html
+<ck-primitive-array name="items" items='[]'></ck-primitive-array>
+```
+- Empty inputs show validation error
+- `aria-invalid="true"` for accessibility
+- Parent `.ck-primitive-array__item` gets `.has-error` class
+
+**2. Duplicate Detection**
+
+By default, duplicate values are rejected:
+```html
+<ck-primitive-array name="items" items='["apple","banana"]'></ck-primitive-array>
+<!-- Editing "banana" to "apple" shows error -->
+```
+
+Allow duplicates with the `allow-duplicates` attribute:
+```html
+<ck-primitive-array 
+  allow-duplicates 
+  name="items" 
+  items='["apple","apple"]'>
+</ck-primitive-array>
+```
+
+**3. Minimum Length Constraint**
+
+Set minimum character length with `minlength`:
+```html
+<ck-primitive-array 
+  minlength="3" 
+  name="items" 
+  items='["ab"]'>
+</ck-primitive-array>
+<!-- Values shorter than 3 characters show error -->
+```
+
+**4. Maximum Length Constraint**
+
+Set maximum character length with `maxlength`:
+```html
+<ck-primitive-array 
+  maxlength="10" 
+  name="items" 
+  items='["this is too long"]'>
+</ck-primitive-array>
+<!-- Values longer than 10 characters show error -->
+```
+
+**5. Pattern Matching**
+
+Validate items against a regex pattern with `pattern`:
+```html
+<!-- Email pattern -->
+<ck-primitive-array 
+  pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}" 
+  name="emails">
+</ck-primitive-array>
+
+<!-- Hex color pattern (3 or 6 digits) -->
+<ck-primitive-array 
+  pattern="[0-9a-f]{3}([0-9a-f]{3})?" 
+  name="colors">
+</ck-primitive-array>
+```
+
+##### List-Level Validation
+
+Control the overall list with list-level constraints:
+
+**1. Required Attribute**
+
+Mark the list as required (must have at least one active item):
+```html
+<ck-primitive-array 
+  required 
+  name="items" 
+  items='[]'>
+</ck-primitive-array>
+<!-- Shows error if list is empty -->
+```
+
+**2. Minimum Item Count**
+
+Require a minimum number of active items with `min`:
+```html
+<ck-primitive-array 
+  min="2" 
+  name="items" 
+  items='["item1"]'>
+</ck-primitive-array>
+<!-- Shows error if fewer than 2 active items -->
+```
+
+**3. Maximum Item Count**
+
+Limit the maximum number of active items with `max`:
+```html
+<ck-primitive-array 
+  max="5" 
+  name="items" 
+  items='["item1","item2","item3"]'>
+</ck-primitive-array>
+<!-- Shows error if more than 5 active items -->
+<!-- Add button disables at max count -->
+```
+
+##### Combining Constraints
+
+Use multiple validation attributes together:
+```html
+<ck-primitive-array 
+  required
+  min="1"
+  max="10"
+  minlength="2"
+  maxlength="50"
+  pattern="^[a-z0-9\s]+$"
+  allow-duplicates="false"
+  name="tags">
+</ck-primitive-array>
+```
+
+##### Styling Validation Errors
+
+Style validation errors with CSS:
 ```css
-/* Style validation errors */
+/* Item with error */
 .ck-primitive-array__item.has-error input {
-  border-color: red;
+  border-color: #d32f2f;
+  background-color: #ffebee;
+}
+
+/* Error message display */
+.ck-primitive-array__item [data-error] {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
 }
 ```
 
-**Behavior**:
-- Empty inputs get `aria-invalid="true"` attribute
-- Parent `.ck-primitive-array__item` gets `.has-error` class
-- Screen readers announce invalid state
+##### Checking Validity in JavaScript
+
+Use `checkValidity()` before form submission:
+```javascript
+const element = document.querySelector('ck-primitive-array');
+
+if (!element.checkValidity()) {
+  alert('Please fix validation errors');
+  return;
+}
+
+// All constraints satisfied - safe to submit
+```
+
+The component automatically prevents form submission when validation fails. No additional code needed.
 
 #### Accessibility
 

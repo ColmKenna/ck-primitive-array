@@ -68,7 +68,21 @@ export class CkPrimitiveArray extends HTMLElement {
   }
 
   static get observedAttributes() {
-    return ['name', 'color', 'items', 'readonly', 'disabled', 'deleted-name'];
+    return [
+      'name',
+      'color',
+      'items',
+      'readonly',
+      'disabled',
+      'deleted-name',
+      'required',
+      'min',
+      'max',
+      'minlength',
+      'maxlength',
+      'pattern',
+      'allow-duplicates',
+    ];
   }
 
   attributeChangedCallback(name: string, oldValue: string, newValue: string) {
@@ -214,34 +228,111 @@ export class CkPrimitiveArray extends HTMLElement {
     }));
   }
 
+  private validateItemValue(
+    value: string,
+    itemState: { id: string; value: string; deleted: boolean }
+  ): string | null {
+    // Check empty/whitespace
+    if (value.trim() === '') {
+      return 'This field is required.';
+    }
+
+    // Check minlength
+    const minlength = this.getAttribute('minlength');
+    if (minlength) {
+      const min = parseInt(minlength, 10);
+      if (value.length < min) {
+        return `Must be at least ${min} characters.`;
+      }
+    }
+
+    // Check maxlength
+    const maxlength = this.getAttribute('maxlength');
+    if (maxlength) {
+      const max = parseInt(maxlength, 10);
+      if (value.length > max) {
+        return `Must be no more than ${max} characters.`;
+      }
+    }
+
+    // Check pattern
+    const pattern = this.getAttribute('pattern');
+    if (pattern) {
+      try {
+        const regex = new RegExp(`^${pattern}$`);
+        if (!regex.test(value)) {
+          return 'Invalid format.';
+        }
+      } catch (error) {
+        (globalThis as any).console?.error(
+          'Invalid regex pattern:',
+          pattern,
+          error
+        );
+      }
+    }
+
+    // Check duplicates (unless allow-duplicates is set)
+    if (!this.hasAttribute('allow-duplicates')) {
+      const duplicateExists = this.itemsState.some(
+        item =>
+          item.id !== itemState.id && !item.deleted && item.value === value
+      );
+      if (duplicateExists) {
+        return 'This value already exists.';
+      }
+    }
+
+    return null;
+  }
+
   private commitInputValue(
     itemState: { id: string; value: string; deleted: boolean },
     input: HTMLInputElement,
     itemRow: HTMLDivElement,
     emitChange: boolean
   ) {
-    if (itemState.value === input.value) {
-      return;
+    const valueChanged = itemState.value !== input.value;
+
+    if (valueChanged) {
+      itemState.value = input.value;
+      // Update aria-label
+      input.setAttribute('aria-label', `Item: ${input.value}`);
+      // Update hidden input in light DOM
+      this.syncHiddenInputs();
     }
 
-    itemState.value = input.value;
+    // Always validate
+    const errorMessage = this.validateItemValue(input.value, itemState);
 
-    // Update aria-label
-    input.setAttribute('aria-label', `Item: ${input.value}`);
-
-    // Update hidden input in light DOM
-    this.syncHiddenInputs();
-
-    // Validation: mark as invalid if empty
-    if (input.value === '') {
+    if (errorMessage) {
       input.setAttribute('aria-invalid', 'true');
+      input.classList.add('has-error');
       itemRow.classList.add('has-error');
+
+      // Remove old error message if exists
+      const oldError = itemRow.querySelector('[data-error]');
+      if (oldError) {
+        oldError.remove();
+      }
+
+      // Create and add error message
+      const errorEl = document.createElement('div');
+      errorEl.setAttribute('data-error', '');
+      errorEl.className = 'ck-primitive-array__error';
+      errorEl.textContent = errorMessage;
+      itemRow.appendChild(errorEl);
     } else {
       input.removeAttribute('aria-invalid');
+      input.classList.remove('has-error');
       itemRow.classList.remove('has-error');
+      const oldError = itemRow.querySelector('[data-error]');
+      if (oldError) {
+        oldError.remove();
+      }
     }
 
-    if (emitChange) {
+    if (valueChanged && emitChange) {
       this.dispatchEvent(
         new CustomEvent('change', {
           bubbles: true,
@@ -254,6 +345,82 @@ export class CkPrimitiveArray extends HTMLElement {
   private createItemId() {
     this.nextItemId += 1;
     return `item-${this.nextItemId}`;
+  }
+
+  private validateListConstraints(): void {
+    if (!this.container) return;
+
+    const activeCount = this.itemsState.filter(item => !item.deleted).length;
+    const min = this.getAttribute('min');
+    const max = this.getAttribute('max');
+    const isRequired = this.hasAttribute('required');
+
+    // Remove old validation errors
+    const oldErrors = this.container.querySelectorAll(
+      '[data-required-error], [data-min-error], [data-max-error]'
+    );
+    oldErrors.forEach(error => error.remove());
+
+    // Check required
+    if (isRequired && activeCount === 0) {
+      const errorEl = document.createElement('div');
+      errorEl.setAttribute('data-required-error', '');
+      errorEl.className = 'ck-primitive-array__list-error';
+      errorEl.textContent = 'At least one item is required.';
+      this.container.appendChild(errorEl);
+    }
+
+    // Check min
+    if (min) {
+      const minCount = parseInt(min, 10);
+      if (activeCount < minCount && activeCount > 0) {
+        const errorEl = document.createElement('div');
+        errorEl.setAttribute('data-min-error', '');
+        errorEl.className = 'ck-primitive-array__list-error';
+        errorEl.textContent = `At least ${minCount} items required.`;
+        this.container.appendChild(errorEl);
+      }
+    }
+
+    // Check max
+    if (max) {
+      const maxCount = parseInt(max, 10);
+      if (activeCount > maxCount) {
+        const errorEl = document.createElement('div');
+        errorEl.setAttribute('data-max-error', '');
+        errorEl.className = 'ck-primitive-array__list-error';
+        errorEl.textContent = `Maximum ${maxCount} items allowed.`;
+        this.container.appendChild(errorEl);
+      }
+    }
+
+    // Update add button disabled state
+    if (this.addButton) {
+      const isReadonly = this.hasAttribute('readonly');
+      const isDisabled = this.hasAttribute('disabled');
+      const atMax = max ? activeCount >= parseInt(max, 10) : false;
+      this.addButton.disabled = isReadonly || isDisabled || atMax;
+    }
+  }
+
+  private attachFormValidation(): void {
+    const form = this.closest('form');
+    if (!form) return;
+
+    // Only attach once
+    if ((form as any).__ckpaValidationAttached) {
+      return;
+    }
+    (form as any).__ckpaValidationAttached = true;
+
+    // Prevent form submission if invalid
+    const handleSubmit = (e: Event) => {
+      if (!this.checkValidity()) {
+        e.preventDefault();
+      }
+    };
+
+    form.addEventListener('submit', handleSubmit);
   }
 
   private render() {
@@ -340,6 +507,12 @@ export class CkPrimitiveArray extends HTMLElement {
 
     // Sync hidden inputs for form participation
     this.syncHiddenInputs();
+
+    // Validate list constraints
+    this.validateListConstraints();
+
+    // Attach form validation
+    this.attachFormValidation();
   }
 
   private createItemRow(itemState: {
@@ -428,6 +601,9 @@ export class CkPrimitiveArray extends HTMLElement {
       // Sync hidden inputs in light DOM
       this.syncHiddenInputs();
 
+      // Re-validate list constraints
+      this.validateListConstraints();
+
       // Focus the button after toggle
       deleteButton.focus();
 
@@ -480,6 +656,9 @@ export class CkPrimitiveArray extends HTMLElement {
 
       // Re-index ARIA labels for remaining items
       this.updateAriaLabels();
+
+      // Re-validate list constraints
+      this.validateListConstraints();
 
       // Focus Add button
       this.addButton?.focus();
@@ -546,6 +725,35 @@ export class CkPrimitiveArray extends HTMLElement {
   }
 
   checkValidity(): boolean {
+    // Check required constraint
+    if (this.hasAttribute('required')) {
+      const activeCount = this.itemsState.filter(item => !item.deleted).length;
+      if (activeCount === 0) {
+        return false;
+      }
+    }
+
+    // Check min constraint
+    const min = this.getAttribute('min');
+    if (min) {
+      const minCount = parseInt(min, 10);
+      const activeCount = this.itemsState.filter(item => !item.deleted).length;
+      if (activeCount < minCount) {
+        return false;
+      }
+    }
+
+    // Check max constraint
+    const max = this.getAttribute('max');
+    if (max) {
+      const maxCount = parseInt(max, 10);
+      const activeCount = this.itemsState.filter(item => !item.deleted).length;
+      if (activeCount > maxCount) {
+        return false;
+      }
+    }
+
+    // Check individual item values
     return this.itemsState.every(
       item => item.deleted || item.value.trim() !== ''
     );
@@ -568,6 +776,9 @@ export class CkPrimitiveArray extends HTMLElement {
 
     // Sync hidden inputs for form participation
     this.syncHiddenInputs();
+
+    // Re-validate list constraints
+    this.validateListConstraints();
 
     // Focus the new input
     const input = row.querySelector('input') as HTMLInputElement | null;
