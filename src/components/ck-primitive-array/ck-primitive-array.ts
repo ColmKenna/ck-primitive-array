@@ -1023,7 +1023,14 @@ export class CkPrimitiveArray extends HTMLElement {
     existingItems.forEach(item => item.remove());
 
     this.itemsState.forEach(itemState => {
-      this.listElement!.appendChild(this.createItemRow(itemState));
+      const row = this.createItemRow(itemState);
+      this.listElement!.appendChild(row);
+      const input = row.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement | null;
+      if (input) {
+        this.commitInputValue(itemState, input, row, false);
+      }
     });
 
     this.updatePlaceholder();

@@ -242,7 +242,7 @@ itemState.deleted = true; // Input becomes disabled
 
 #### Validation
 
-Validation runs on every input event (including paste) and displays per-item errors inline.
+Validation runs on initial item render (including items attribute updates) and on every input event (including paste), displaying per-item errors inline.
 
 **Error Display**:
 - Error element rendered inside the item row under the input controls

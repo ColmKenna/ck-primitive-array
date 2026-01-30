@@ -304,6 +304,7 @@ The component provides comprehensive validation covering item-level and list-lev
 - Validation runs on every input event (keystroke or paste)
 - Errors appear immediately on invalid input
 - Errors clear immediately on correction
+- Initial items are validated on render, so preloaded invalid values display errors immediately
 
 ##### Item-Level Validation
 

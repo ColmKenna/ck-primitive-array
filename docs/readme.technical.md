@@ -554,7 +554,7 @@ expect(changeHandler).toHaveBeenCalledTimes(1);
 
 ### Overview
 
-The validation system provides both item-level and list-level constraint checking with comprehensive error messaging and accessibility support. Validation is always performed on input events and state changes, preventing invalid data entry.
+The validation system provides both item-level and list-level constraint checking with comprehensive error messaging and accessibility support. Validation is performed on initial item render (including items attribute updates) and on input events and state changes, preventing invalid data entry.
 
 ### Item-Level Validation
 
@@ -635,7 +635,7 @@ private validateItemValue(value: string, itemState): string | null {
 
 #### commitInputValue() Integration
 
-The `commitInputValue()` method always calls `validateItemValue()` on every input event (including paste):
+The `commitInputValue()` method always calls `validateItemValue()` on every input event (including paste). Initial item render also runs `commitInputValue()` per row to validate preloaded values:
 
 ```typescript
 const error = this.validateItemValue(value, itemState);

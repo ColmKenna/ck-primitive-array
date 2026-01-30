@@ -2664,6 +2664,45 @@ describe('CkPrimitiveArray Component', () => {
     });
   });
 
+  describe('Validation - Initial Load', () => {
+    test('should validate initial items and show error for empty value', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '[""]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement | null;
+      const errorMsg = el.shadowRoot?.querySelector('[data-error]');
+
+      expect(input?.getAttribute('aria-invalid')).toBe('true');
+      expect(errorMsg).toBeTruthy();
+      expect(errorMsg?.textContent?.toLowerCase()).toContain('required');
+
+      document.body.removeChild(el);
+    });
+
+    test('should validate initial items against minlength', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      el.setAttribute('items', '["ab"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement | null;
+      const errorMsg = el.shadowRoot?.querySelector('[data-error]');
+
+      expect(input?.getAttribute('aria-invalid')).toBe('true');
+      expect(errorMsg).toBeTruthy();
+      expect(errorMsg?.textContent).toContain('3');
+
+      document.body.removeChild(el);
+    });
+  });
+
   describe('Validation - Empty and Whitespace Rejection', () => {
     test('should show error when input is empty string', () => {
       const el = new CkPrimitiveArray();
