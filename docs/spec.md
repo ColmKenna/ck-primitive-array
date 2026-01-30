@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `CkPrimitiveArray` is a web component that displays a greeting message with customizable name and color. It serves as a foundational example for the component library.
+The `CkPrimitiveArray` is a web component for editing a list of primitive values (strings, numbers, booleans). It renders a header ("Hello, {name}!") alongside an editable list UI with add, soft delete/undo, hard remove, validation, form participation, and accessibility support.
 
 ## Custom Element Registration
 
@@ -22,18 +22,26 @@ The `CkPrimitiveArray` is a web component that displays a greeting message with 
 
 | Attribute     | Type   | Default | Description                |
 |---------------|--------|---------|----------------------------|
-| `name`        | string | –       | Name for active items' hidden inputs (e.g., `name[]`) |
+| `name`        | string | –       | Used for the header text and as the name for active items' hidden inputs (e.g., `name[]`) |
 | `deleted-name`| string | –       | Name for deleted items' hidden inputs (e.g., `deleted-name[]`) |
-| `color`       | string | "#333"  | Text color for the message  |
+| `color`       | string | "#333"  | Text color for the header message |
 | `items`       | JSON   | `[]`    | JSON array of primitive values to display as items |
 | `readonly`    | boolean| –       | When present, makes inputs read-only and disables Add/Delete/Remove controls |
 | `disabled`    | boolean| –       | When present, disables inputs and all controls (Add/Delete/Remove) |
+| `required`    | boolean| –       | When present, requires at least one active item |
+| `min`         | number | –       | Minimum number of active items |
+| `max`         | number | –       | Maximum number of active items |
+| `minlength`   | number | –       | Minimum character length per item |
+| `maxlength`   | number | –       | Maximum character length per item |
+| `pattern`     | string | –       | Regex pattern each item must match |
+| `allow-duplicates` | boolean | – | When present, allows duplicate values |
 
 ### Properties
 
 #### `name: string`
 - **Getter**: Returns the `name` attribute value or "World" if not set
 - **Setter**: Sets the `name` attribute
+- **Note**: The `name` value is used for the header text and for active hidden input names
 
 #### `color: string`
 - **Getter**: Returns the `color` attribute value or "#333" if not set
@@ -150,6 +158,12 @@ When the user presses **Ctrl+Enter** (Windows/Linux) or **Cmd+Enter** (Mac) whil
 </script>
 ```
 
+#### Tab Navigation, Button Activation, and Escape
+
+- **Tab/Shift+Tab**: Moves focus through Add → Input → Delete → Remove → next row input (Shift+Tab reverses). Tab on the last control moves focus to the next focusable element outside the component.
+- **Enter/Space on buttons**: Activates Add/Delete/Remove buttons when they are focused.
+- **Escape on input**: Moves focus to the Add button without altering the value.
+
 ### Inline Edit (Phase 2.1)
 
 Each item's text input supports inline editing with the following features:
@@ -200,15 +214,15 @@ When the `name` attribute is set, hidden inputs are created in the light DOM for
 
 #### Accessibility (ARIA)
 
-Each input has a dynamic ARIA label:
+Each input has a dynamic ARIA label that includes index and value:
 ```html
-<input type="text" aria-label="Item: apple" value="apple" />
+<input type="text" aria-label="Item 1: apple" value="apple" />
 ```
 
 **ARIA Updates**:
-- Initial label: `"Item: {value}"`
-- Updates on every keystroke to reflect current value
-- Provides context for screen readers
+- Input label: `"Item {index}: {value}"` (empty value -> `"Item {index}"`)
+- Button labels: `"Delete/Restore/Remove Item {index}: {value}"`
+- Labels update on every keystroke and re-index after removal
 
 #### Soft-Delete Support
 
@@ -417,13 +431,13 @@ After removal, remaining items' ARIA labels are updated:
 
 ```html
 <!-- Before removal (3 items) -->
-<input type="text" value="a" aria-label="Item: a" />
-<input type="text" value="b" aria-label="Item: b" />
-<input type="text" value="c" aria-label="Item: c" />
+<input type="text" value="a" aria-label="Item 1: a" />
+<input type="text" value="b" aria-label="Item 2: b" />
+<input type="text" value="c" aria-label="Item 3: c" />
 
 <!-- After removing "b" (2 items) -->
-<input type="text" value="a" aria-label="Item: a" />
-<input type="text" value="c" aria-label="Item: c" />
+<input type="text" value="a" aria-label="Item 1: a" />
+<input type="text" value="c" aria-label="Item 2: c" />
 ```
 
 ARIA labels stay synchronized with current item values for screen reader accessibility.
@@ -900,6 +914,37 @@ const removed = formData.getAll('removed[]'); // ['d']
 
 ---
 
+### Accessibility (Phase 6)
+
+#### Roles
+- List container uses `role="list"`, rows use `role="listitem"`
+- Native `<button>` and `<input type="text">` semantics are preserved
+
+#### Labels
+- Input labels: `"Item {index}: {value}"` (empty value -> `"Item {index}"`)
+- Button labels: `"Delete/Restore/Remove Item {index}: {value}"`
+- Add button has `aria-label="Add item"`
+- List uses `aria-label="Items"` and `aria-required="true"` when required
+
+#### States
+- `aria-pressed` toggles on Delete/Undo
+- `aria-invalid` set on invalid inputs and removed when valid
+- `aria-disabled` on disabled controls
+- `aria-readonly` on readonly inputs
+
+#### Live Region Announcements
+- Shadow DOM includes an `aria-live="polite"` status region
+- Announces add/delete/restore/remove actions
+- Announces validation errors when they appear (no duplicate announcements)
+
+#### Focus & Keyboard
+- Tab/Shift+Tab navigate between controls and rows; Tab exits after last control
+- Enter/Space activate focused buttons
+- Escape moves focus to Add button
+- Enter in input adds item; Ctrl/Cmd+Enter submits form
+
+---
+
 ### Lifecycle Callbacks
 
 #### `constructor()`
@@ -911,7 +956,7 @@ const removed = formData.getAll('removed[]'); // ['d']
 - Triggers initial render
 
 #### `attributeChangedCallback(name, oldValue, newValue)`
-- Observes: `name`, `color`, `items`, `readonly`, `disabled`
+- Observes: `name`, `color`, `items`, `readonly`, `disabled`, `deleted-name`, `required`, `min`, `max`, `minlength`, `maxlength`, `pattern`, `allow-duplicates`
 - Triggers re-render when observed attributes change
 - For `items`, preserves previous state if new value is invalid JSON
 
@@ -923,17 +968,18 @@ const removed = formData.getAll('removed[]'); // ['d']
 <div class="ck-primitive-array">
   <h1 class="ck-primitive-array__message">Hello, ${name}!</h1>
   <div class="ck-primitive-array__controls">
-    <button type="button" class="add-item">Add</button>
+    <button type="button" class="add-item" aria-label="Add item">Add</button>
   </div>
-  <div class="ck-primitive-array__list" role="list" aria-label="items">
+  <div class="ck-primitive-array__list" role="list" aria-label="Items">
     <p class="ck-primitive-array__placeholder">No items</p>
     <!-- Items rendered here when items attribute is set -->
     <div class="ck-primitive-array__item" role="listitem">
-      <input type="text" value="${item.value}" />
-      <button type="button" data-action="delete">Delete</button>
-      <button type="button" data-action="remove">X</button>
+      <input type="text" value="${item.value}" aria-label="Item 1: ${item.value}" />
+      <button type="button" data-action="delete" aria-label="Delete Item 1: ${item.value}">Delete</button>
+      <button type="button" data-action="remove" aria-label="Remove Item 1: ${item.value}">X</button>
     </div>
   </div>
+  <div class="ck-primitive-array__live" aria-live="polite" aria-atomic="true" role="status"></div>
   <p class="ck-primitive-array__subtitle">Welcome to our Web Component Library</p>
 </div>
 ```
@@ -1080,7 +1126,7 @@ element.setAttribute('color', 'blue');
 88. ✅ Empty list submits no values (3.5.5)
 89. ✅ Validation prevents submission (3.5.6)
 
-**Total**: 166 tests passing
+**Total**: 228 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

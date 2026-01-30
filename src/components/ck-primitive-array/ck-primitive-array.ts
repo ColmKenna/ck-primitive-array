@@ -19,6 +19,11 @@ export class CkPrimitiveArray extends HTMLElement {
   private lastItemsAttribute: string | null = null;
   private fieldsContainer: HTMLDivElement | null = null;
   private hiddenInputsMap: Map<string, HTMLInputElement> = new Map();
+  private liveRegionElement: HTMLDivElement | null = null;
+  private announcementSequence = 0;
+  private lastErrorAnnouncements: Map<string, string> = new Map();
+  private boundKeydownHandler: ((event: Event) => void) | null = null;
+  private boundFocusHandler: ((event: FocusEvent) => void) | null = null;
 
   constructor() {
     super();
@@ -41,6 +46,28 @@ export class CkPrimitiveArray extends HTMLElement {
   }
 
   connectedCallback() {
+    if (!this.hasAttribute('tabindex')) {
+      this.tabIndex = 0;
+    }
+
+    if (!this.boundFocusHandler) {
+      this.boundFocusHandler = (event: FocusEvent) => {
+        const path = event.composedPath ? event.composedPath() : [];
+        const origin = path.length > 0 ? path[0] : event.target;
+        if (origin !== this) return;
+        if (this.shadow.activeElement) return;
+        this.focusFirstInteractive();
+      };
+    }
+    this.addEventListener('focus', this.boundFocusHandler);
+
+    if (!this.boundKeydownHandler) {
+      this.boundKeydownHandler = (event: Event) => {
+        this.handleShadowKeydown(event as KeyboardEvent);
+      };
+    }
+    this.shadow.addEventListener('keydown', this.boundKeydownHandler);
+
     this.ensureFieldsContainer();
     this.render();
   }
@@ -50,7 +77,15 @@ export class CkPrimitiveArray extends HTMLElement {
     if (this.addButton && this.boundAddHandler) {
       this.addButton.removeEventListener('click', this.boundAddHandler);
     }
+    if (this.boundKeydownHandler) {
+      this.shadow.removeEventListener('keydown', this.boundKeydownHandler);
+    }
+    if (this.boundFocusHandler) {
+      this.removeEventListener('focus', this.boundFocusHandler);
+    }
     this.boundAddHandler = null;
+    this.boundKeydownHandler = null;
+    this.boundFocusHandler = null;
     this.container = null;
     this.messageElement = null;
     this.subtitleElement = null;
@@ -58,6 +93,7 @@ export class CkPrimitiveArray extends HTMLElement {
     this.addButton = null;
     this.listElement = null;
     this.placeholderElement = null;
+    this.liveRegionElement = null;
 
     // Cleanup light DOM fields container
     if (this.fieldsContainer && this.fieldsContainer.parentNode) {
@@ -65,6 +101,7 @@ export class CkPrimitiveArray extends HTMLElement {
     }
     this.fieldsContainer = null;
     this.hiddenInputsMap.clear();
+    this.lastErrorAnnouncements.clear();
   }
 
   static get observedAttributes() {
@@ -226,6 +263,7 @@ export class CkPrimitiveArray extends HTMLElement {
       value,
       deleted: false,
     }));
+    this.lastErrorAnnouncements.clear();
   }
 
   private validateItemValue(
@@ -296,10 +334,10 @@ export class CkPrimitiveArray extends HTMLElement {
 
     if (valueChanged) {
       itemState.value = input.value;
-      // Update aria-label
-      input.setAttribute('aria-label', `Item: ${input.value}`);
       // Update hidden input in light DOM
       this.syncHiddenInputs();
+      // Refresh labels for index/value changes
+      this.updateAriaLabels();
     }
 
     // Always validate
@@ -332,6 +370,12 @@ export class CkPrimitiveArray extends HTMLElement {
       errorEl.className = 'ck-primitive-array__error has-error';
       errorEl.textContent = errorMessage;
       input.setAttribute('aria-describedby', errorId);
+
+      const lastError = this.lastErrorAnnouncements.get(itemState.id);
+      if (lastError !== errorMessage) {
+        this.lastErrorAnnouncements.set(itemState.id, errorMessage);
+        this.announce(`Validation error: ${errorMessage}`);
+      }
     } else {
       input.removeAttribute('aria-invalid');
       input.removeAttribute('aria-describedby');
@@ -341,6 +385,7 @@ export class CkPrimitiveArray extends HTMLElement {
       if (oldError) {
         oldError.remove();
       }
+      this.lastErrorAnnouncements.delete(itemState.id);
     }
 
     if (valueChanged && emitChange) {
@@ -358,13 +403,178 @@ export class CkPrimitiveArray extends HTMLElement {
     return `item-${this.nextItemId}`;
   }
 
+  private setAriaDisabled(element: HTMLElement, disabled: boolean) {
+    if (disabled) {
+      element.setAttribute('aria-disabled', 'true');
+    } else {
+      element.removeAttribute('aria-disabled');
+    }
+  }
+
+  private setAriaReadonly(input: HTMLInputElement, readonly: boolean) {
+    if (readonly) {
+      input.setAttribute('aria-readonly', 'true');
+    } else {
+      input.removeAttribute('aria-readonly');
+    }
+  }
+
+  private formatItemLabel(index: number, value: string): string {
+    const base = `Item ${index}`;
+    const trimmed = value.trim();
+    return trimmed === '' ? base : `${base}: ${value}`;
+  }
+
+  private getItemIndex(itemId: string): number {
+    const index = this.itemsState.findIndex(item => item.id === itemId);
+    return index === -1 ? 1 : index + 1;
+  }
+
+  private updateAriaLabels() {
+    if (!this.listElement) return;
+
+    const rows = Array.from(
+      this.listElement.querySelectorAll<HTMLDivElement>(
+        '.ck-primitive-array__item'
+      )
+    );
+
+    rows.forEach((row, index) => {
+      const input = row.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement | null;
+      const deleteButton = row.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement | null;
+      const removeButton = row.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement | null;
+      const value = input ? input.value : '';
+      const itemLabel = this.formatItemLabel(index + 1, value);
+      const itemId = row.getAttribute('data-id') || '';
+      const itemState = this.itemsState.find(item => item.id === itemId);
+      const isDeleted = itemState?.deleted ?? false;
+
+      if (input) {
+        input.setAttribute('aria-label', itemLabel);
+      }
+
+      if (deleteButton) {
+        const action = isDeleted ? 'Restore' : 'Delete';
+        deleteButton.setAttribute('aria-label', `${action} ${itemLabel}`);
+      }
+
+      if (removeButton) {
+        removeButton.setAttribute('aria-label', `Remove ${itemLabel}`);
+      }
+    });
+  }
+
+  private updateListAriaDescribedBy(errorIds: string[]) {
+    if (!this.listElement) return;
+    if (errorIds.length > 0) {
+      this.listElement.setAttribute('aria-describedby', errorIds.join(' '));
+    } else {
+      this.listElement.removeAttribute('aria-describedby');
+    }
+  }
+
+  private announce(message: string) {
+    if (!this.liveRegionElement) return;
+    this.announcementSequence += 1;
+    this.liveRegionElement.setAttribute(
+      'data-announce-seq',
+      String(this.announcementSequence)
+    );
+    this.liveRegionElement.textContent = message;
+  }
+
+  private getFocusableElements(): HTMLElement[] {
+    const elements = Array.from(
+      this.shadow.querySelectorAll<HTMLElement>('button, input, [tabindex]')
+    );
+
+    return elements.filter(element => {
+      if (element.tabIndex < 0) return false;
+      const isDisabled = (element as HTMLButtonElement | HTMLInputElement)
+        .disabled;
+      return !isDisabled;
+    });
+  }
+
+  private focusFirstInteractive() {
+    const focusable = this.getFocusableElements();
+    if (focusable.length > 0) {
+      focusable[0].focus();
+    }
+  }
+
+  private focusOutside(direction: 'next' | 'prev'): boolean {
+    const selector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusable = Array.from(
+      document.querySelectorAll<HTMLElement>(selector)
+    ).filter(element => {
+      const isDisabled = (element as HTMLButtonElement | HTMLInputElement)
+        .disabled;
+      return !isDisabled;
+    });
+
+    const hostIndex = focusable.indexOf(this);
+    if (hostIndex === -1) return false;
+
+    const targetIndex = direction === 'next' ? hostIndex + 1 : hostIndex - 1;
+    const target = focusable[targetIndex];
+    if (!target) return false;
+
+    target.focus();
+    return true;
+  }
+
+  private handleShadowKeydown(event: KeyboardEvent) {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    if (event.key === 'Tab') {
+      const focusable = this.getFocusableElements();
+      const currentIndex = focusable.indexOf(target);
+      if (currentIndex === -1) return;
+
+      const direction = event.shiftKey ? -1 : 1;
+      const nextIndex = currentIndex + direction;
+
+      if (nextIndex >= 0 && nextIndex < focusable.length) {
+        event.preventDefault();
+        focusable[nextIndex].focus();
+        return;
+      }
+
+      const movedOutside = this.focusOutside(event.shiftKey ? 'prev' : 'next');
+      if (movedOutside) {
+        event.preventDefault();
+      }
+    }
+
+    if (
+      target instanceof HTMLButtonElement &&
+      (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar')
+    ) {
+      if (target.disabled) {
+        return;
+      }
+      event.preventDefault();
+      target.click();
+    }
+  }
+
   private validateListConstraints(): void {
-    if (!this.container) return;
+    if (!this.container || !this.listElement) return;
 
     const activeCount = this.itemsState.filter(item => !item.deleted).length;
     const min = this.getAttribute('min');
     const max = this.getAttribute('max');
     const isRequired = this.hasAttribute('required');
+    const errorIds: string[] = [];
 
     // Remove old validation errors
     const oldErrors = this.container.querySelectorAll(
@@ -377,8 +587,10 @@ export class CkPrimitiveArray extends HTMLElement {
       const errorEl = document.createElement('div');
       errorEl.setAttribute('data-required-error', '');
       errorEl.className = 'ck-primitive-array__list-error';
+      errorEl.id = 'ckpa-list-error-required';
       errorEl.textContent = 'At least one item is required.';
       this.container.appendChild(errorEl);
+      errorIds.push(errorEl.id);
     }
 
     // Check min
@@ -388,8 +600,10 @@ export class CkPrimitiveArray extends HTMLElement {
         const errorEl = document.createElement('div');
         errorEl.setAttribute('data-min-error', '');
         errorEl.className = 'ck-primitive-array__list-error';
+        errorEl.id = 'ckpa-list-error-min';
         errorEl.textContent = `At least ${minCount} items required.`;
         this.container.appendChild(errorEl);
+        errorIds.push(errorEl.id);
       }
     }
 
@@ -400,10 +614,14 @@ export class CkPrimitiveArray extends HTMLElement {
         const errorEl = document.createElement('div');
         errorEl.setAttribute('data-max-error', '');
         errorEl.className = 'ck-primitive-array__list-error';
+        errorEl.id = 'ckpa-list-error-max';
         errorEl.textContent = `Maximum ${maxCount} items allowed.`;
         this.container.appendChild(errorEl);
+        errorIds.push(errorEl.id);
       }
     }
+
+    this.updateListAriaDescribedBy(errorIds);
 
     // Update add button disabled state
     if (this.addButton) {
@@ -411,6 +629,7 @@ export class CkPrimitiveArray extends HTMLElement {
       const isDisabled = this.hasAttribute('disabled');
       const atMax = max ? activeCount >= parseInt(max, 10) : false;
       this.addButton.disabled = isReadonly || isDisabled || atMax;
+      this.setAriaDisabled(this.addButton, this.addButton.disabled);
     }
   }
 
@@ -475,6 +694,7 @@ export class CkPrimitiveArray extends HTMLElement {
       this.addButton = document.createElement('button');
       this.addButton.className = 'add-item';
       this.addButton.type = 'button';
+      this.addButton.setAttribute('aria-label', 'Add item');
       this.addButton.textContent = 'Add';
       this.controlsElement.appendChild(this.addButton);
       this.container.appendChild(this.controlsElement);
@@ -482,7 +702,7 @@ export class CkPrimitiveArray extends HTMLElement {
       this.listElement = document.createElement('div');
       this.listElement.className = 'ck-primitive-array__list';
       this.listElement.setAttribute('role', 'list');
-      this.listElement.setAttribute('aria-label', 'items');
+      this.listElement.setAttribute('aria-label', 'Items');
 
       this.placeholderElement = document.createElement('p');
       this.placeholderElement.className = 'ck-primitive-array__placeholder';
@@ -490,6 +710,15 @@ export class CkPrimitiveArray extends HTMLElement {
       this.listElement.appendChild(this.placeholderElement);
 
       this.container.appendChild(this.listElement);
+
+      this.liveRegionElement = document.createElement('div');
+      this.liveRegionElement.className = 'ck-primitive-array__live';
+      this.liveRegionElement.setAttribute('aria-live', 'polite');
+      this.liveRegionElement.setAttribute('aria-atomic', 'true');
+      this.liveRegionElement.setAttribute('role', 'status');
+      this.announcementSequence = 0;
+      this.liveRegionElement.setAttribute('data-announce-seq', '0');
+      this.container.appendChild(this.liveRegionElement);
 
       this.shadow.appendChild(this.container);
 
@@ -505,15 +734,18 @@ export class CkPrimitiveArray extends HTMLElement {
       this.container.classList.toggle('is-readonly', isReadonly);
     }
 
+    if (this.listElement) {
+      if (this.hasAttribute('required')) {
+        this.listElement.setAttribute('aria-required', 'true');
+      } else {
+        this.listElement.removeAttribute('aria-required');
+      }
+    }
+
     // Update dynamic content
     if (this.messageElement) {
       this.messageElement.textContent = `Hello, ${this.name}!`;
       (this.messageElement.style as CSSStyleDeclaration).color = this.color;
-    }
-
-    // Update add button disabled state based on readonly/disabled attributes
-    if (this.addButton) {
-      this.addButton.disabled = isReadonly || isDisabled;
     }
 
     // Render items from attribute
@@ -556,12 +788,15 @@ export class CkPrimitiveArray extends HTMLElement {
     input.className = 'ck-primitive-array__input';
     input.value = itemState.value;
 
-    // Set aria-label for accessibility
-    input.setAttribute('aria-label', `Item: ${itemState.value}`);
-
     // Disable input if item is soft-deleted
     input.readOnly = isReadonly;
     input.disabled = itemState.deleted || isDisabled;
+    input.setAttribute(
+      'aria-label',
+      this.formatItemLabel(this.getItemIndex(itemState.id), itemState.value)
+    );
+    this.setAriaReadonly(input, isReadonly);
+    this.setAriaDisabled(input, input.disabled);
 
     input.addEventListener('input', () => {
       this.commitInputValue(itemState, input, itemRow, true);
@@ -587,6 +822,10 @@ export class CkPrimitiveArray extends HTMLElement {
           this.addButton?.focus();
         }
       }
+
+      if (e.key === 'Escape') {
+        this.addButton?.focus();
+      }
     });
 
     const deleteButton = document.createElement('button');
@@ -599,6 +838,7 @@ export class CkPrimitiveArray extends HTMLElement {
     );
     deleteButton.textContent = itemState.deleted ? 'Undo' : 'Delete';
     deleteButton.disabled = isReadonly || isDisabled;
+    this.setAriaDisabled(deleteButton, deleteButton.disabled);
 
     deleteButton.addEventListener('click', () => {
       if (this.hasAttribute('readonly') || this.hasAttribute('disabled')) {
@@ -623,6 +863,8 @@ export class CkPrimitiveArray extends HTMLElement {
       // Update input disabled state
       input.readOnly = this.hasAttribute('readonly');
       input.disabled = itemState.deleted || this.hasAttribute('disabled');
+      this.setAriaReadonly(input, this.hasAttribute('readonly'));
+      this.setAriaDisabled(input, input.disabled);
 
       // Sync hidden inputs in light DOM
       this.syncHiddenInputs();
@@ -632,6 +874,8 @@ export class CkPrimitiveArray extends HTMLElement {
 
       // Focus the button after toggle
       deleteButton.focus();
+
+      this.updateAriaLabels();
 
       // Dispatch change event with separate active/deleted arrays
       const allItems = this.items;
@@ -652,6 +896,16 @@ export class CkPrimitiveArray extends HTMLElement {
           },
         })
       );
+
+      const itemLabel = this.formatItemLabel(
+        this.getItemIndex(itemState.id),
+        itemState.value
+      );
+      if (itemState.deleted) {
+        this.announce(`${itemLabel} deleted`);
+      } else {
+        this.announce(`${itemLabel} restored`);
+      }
     });
 
     const removeButton = document.createElement('button');
@@ -660,16 +914,20 @@ export class CkPrimitiveArray extends HTMLElement {
     removeButton.setAttribute('data-action', 'remove');
     removeButton.textContent = 'X';
     removeButton.disabled = isReadonly || isDisabled;
+    this.setAriaDisabled(removeButton, removeButton.disabled);
 
     removeButton.addEventListener('click', () => {
       if (this.hasAttribute('readonly') || this.hasAttribute('disabled')) {
         return;
       }
+      const removedIndex = this.getItemIndex(itemState.id);
+      const removedLabel = this.formatItemLabel(removedIndex, itemState.value);
       // Remove from state
       const index = this.itemsState.findIndex(item => item.id === itemState.id);
       if (index !== -1) {
         this.itemsState.splice(index, 1);
       }
+      this.lastErrorAnnouncements.delete(itemState.id);
 
       // Remove hidden input from light DOM
       const hiddenInput = this.hiddenInputsMap.get(itemState.id);
@@ -712,6 +970,8 @@ export class CkPrimitiveArray extends HTMLElement {
           },
         })
       );
+
+      this.announce(`${removedLabel} removed`);
     });
 
     itemRow.appendChild(input);
@@ -735,6 +995,7 @@ export class CkPrimitiveArray extends HTMLElement {
     });
 
     this.updatePlaceholder();
+    this.updateAriaLabels();
   }
 
   private updatePlaceholder() {
@@ -742,16 +1003,6 @@ export class CkPrimitiveArray extends HTMLElement {
       this.placeholderElement.style.display =
         this.itemsState.length > 0 ? 'none' : '';
     }
-  }
-
-  private updateAriaLabels() {
-    if (!this.listElement) return;
-
-    const inputs = this.listElement.querySelectorAll('input[type="text"]');
-    inputs.forEach(input => {
-      const itemValue = (input as HTMLInputElement).value;
-      input.setAttribute('aria-label', `Item: ${itemValue}`);
-    });
   }
 
   checkValidity(): boolean {
@@ -806,6 +1057,7 @@ export class CkPrimitiveArray extends HTMLElement {
     const row = this.createItemRow(newItem);
     this.listElement.appendChild(row);
     this.updatePlaceholder();
+    this.updateAriaLabels();
 
     // Sync hidden inputs for form participation
     this.syncHiddenInputs();
@@ -816,6 +1068,12 @@ export class CkPrimitiveArray extends HTMLElement {
     // Focus the new input
     const input = row.querySelector('input') as HTMLInputElement | null;
     input?.focus();
+
+    const itemLabel = this.formatItemLabel(
+      this.itemsState.length,
+      newItem.value
+    );
+    this.announce(`${itemLabel} added`);
 
     // Dispatch change event
     this.dispatchEvent(

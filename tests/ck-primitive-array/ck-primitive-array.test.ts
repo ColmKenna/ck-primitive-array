@@ -4055,4 +4055,766 @@ describe('CkPrimitiveArray Component', () => {
       document.body.removeChild(el);
     });
   });
+
+  describe('Accessibility - ARIA Roles', () => {
+    test('list container uses list role', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const list = el.shadowRoot?.querySelector('[role="list"]');
+      expect(list).toBeTruthy();
+      expect(list?.getAttribute('role')).toBe('list');
+
+      document.body.removeChild(el);
+    });
+
+    test('buttons keep implicit roles', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const buttons = Array.from(
+        el.shadowRoot?.querySelectorAll('button') || []
+      );
+      expect(buttons.length).toBeGreaterThan(0);
+      buttons.forEach(button => {
+        expect(button.tagName).toBe('BUTTON');
+        expect(button.getAttribute('role')).toBeNull();
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('inputs keep implicit roles', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement | null;
+      expect(input).toBeTruthy();
+      expect(input?.tagName).toBe('INPUT');
+      expect(input?.getAttribute('role')).toBeNull();
+
+      document.body.removeChild(el);
+    });
+
+    test('roles persist after add and remove operations', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      let rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      expect(rows?.length).toBe(2);
+      rows?.forEach(row => {
+        expect(row.getAttribute('role')).toBe('listitem');
+      });
+
+      const removeButton = rows?.[0]?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      expect(rows?.length).toBe(1);
+      expect(rows?.[0]?.getAttribute('role')).toBe('listitem');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Accessibility - ARIA Labels', () => {
+    test('input aria-label includes index and value', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(input.getAttribute('aria-label')).toBe('Item 1: test');
+
+      document.body.removeChild(el);
+    });
+
+    test('input aria-label omits value for empty item', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '[""]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(input.getAttribute('aria-label')).toBe('Item 1');
+
+      document.body.removeChild(el);
+    });
+
+    test('delete button aria-label includes index and value', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      expect(deleteButton.getAttribute('aria-label')).toBe(
+        'Delete Item 1: test'
+      );
+
+      document.body.removeChild(el);
+    });
+
+    test('undo button aria-label includes index and value', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteButton.click();
+
+      const undoButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      expect(undoButton.getAttribute('aria-label')).toBe(
+        'Restore Item 1: test'
+      );
+
+      document.body.removeChild(el);
+    });
+
+    test('remove button aria-label includes index and value', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["test"]');
+      document.body.appendChild(el);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      expect(removeButton.getAttribute('aria-label')).toBe(
+        'Remove Item 1: test'
+      );
+
+      document.body.removeChild(el);
+    });
+
+    test('labels update on edit', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["old"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'new';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+
+      expect(input.getAttribute('aria-label')).toBe('Item 1: new');
+      expect(deleteButton.getAttribute('aria-label')).toBe(
+        'Delete Item 1: new'
+      );
+      expect(removeButton.getAttribute('aria-label')).toBe(
+        'Remove Item 1: new'
+      );
+
+      document.body.removeChild(el);
+    });
+
+    test('labels re-index after removal', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b","c"]');
+      document.body.appendChild(el);
+
+      const rows = Array.from(
+        el.shadowRoot?.querySelectorAll('[role="listitem"]') || []
+      );
+      const removeButton = rows[1].querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll('input[type="text"]') || []
+      );
+      expect(inputs[0].getAttribute('aria-label')).toBe('Item 1: a');
+      expect(inputs[1].getAttribute('aria-label')).toBe('Item 2: c');
+
+      document.body.removeChild(el);
+    });
+
+    test('add button has accessible label', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      const ariaLabel = addButton.getAttribute('aria-label') || '';
+      expect(ariaLabel.length).toBeGreaterThan(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('empty list has accessible name', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const list = el.shadowRoot?.querySelector(
+        '.ck-primitive-array__list'
+      ) as HTMLElement;
+      const ariaLabel = list.getAttribute('aria-label') || '';
+      expect(ariaLabel.length).toBeGreaterThan(0);
+
+      document.body.removeChild(el);
+    });
+
+    test('error messages link via aria-describedby', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const describedBy = input.getAttribute('aria-describedby') || '';
+      expect(describedBy.length).toBeGreaterThan(0);
+
+      const errorEl = el.shadowRoot?.querySelector(
+        `#${describedBy}`
+      ) as HTMLElement | null;
+      expect(errorEl).toBeTruthy();
+      expect(errorEl?.getAttribute('data-error')).toBe('');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Accessibility - ARIA States', () => {
+    test('delete button has aria-pressed="false" when active', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      expect(deleteButton.getAttribute('aria-pressed')).toBe('false');
+
+      document.body.removeChild(el);
+    });
+
+    test('delete button has aria-pressed="true" when deleted', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteButton.click();
+      expect(deleteButton.getAttribute('aria-pressed')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('aria-invalid is set on invalid input', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('aria-invalid is removed on valid input', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      input.value = 'ok';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBeNull();
+
+      document.body.removeChild(el);
+    });
+
+    test('aria-disabled is set on disabled controls', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('disabled', '');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+
+      expect(input.getAttribute('aria-disabled')).toBe('true');
+      expect(deleteButton.getAttribute('aria-disabled')).toBe('true');
+      expect(removeButton.getAttribute('aria-disabled')).toBe('true');
+      expect(addButton.getAttribute('aria-disabled')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('aria-readonly is set on readonly inputs', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      el.setAttribute('readonly', '');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      expect(input.getAttribute('aria-readonly')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('aria-required is set on required list', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('required', '');
+      document.body.appendChild(el);
+
+      const list = el.shadowRoot?.querySelector(
+        '.ck-primitive-array__list'
+      ) as HTMLElement;
+      expect(list.getAttribute('aria-required')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('aria states update dynamically', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(addButton.getAttribute('aria-disabled')).toBeNull();
+
+      el.setAttribute('disabled', '');
+      const disabledButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(disabledButton.getAttribute('aria-disabled')).toBe('true');
+
+      el.removeAttribute('disabled');
+      const enabledButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(enabledButton.getAttribute('aria-disabled')).toBeNull();
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Keyboard Navigation', () => {
+    test('tab focuses the first interactive element when component is focused', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      el.focus();
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(el.shadowRoot?.activeElement).toBe(addButton);
+
+      document.body.removeChild(el);
+    });
+
+    test('tab moves focus to next control in the row', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+
+      input.focus();
+      input.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true })
+      );
+
+      expect(el.shadowRoot?.activeElement).toBe(deleteButton);
+
+      document.body.removeChild(el);
+    });
+
+    test('tab moves focus to the next row', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b"]');
+      document.body.appendChild(el);
+
+      const rows = Array.from(
+        el.shadowRoot?.querySelectorAll('[role="listitem"]') || []
+      );
+      const firstRemove = rows[0].querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      const secondInput = rows[1].querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      firstRemove.focus();
+      firstRemove.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true })
+      );
+
+      expect(el.shadowRoot?.activeElement).toBe(secondInput);
+
+      document.body.removeChild(el);
+    });
+
+    test('shift+tab moves focus to the previous control', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+
+      deleteButton.focus();
+      deleteButton.dispatchEvent(
+        new window.KeyboardEvent('keydown', {
+          key: 'Tab',
+          shiftKey: true,
+          bubbles: true,
+        })
+      );
+
+      expect(el.shadowRoot?.activeElement).toBe(input);
+
+      document.body.removeChild(el);
+    });
+
+    test('enter activates buttons', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+
+      deleteButton.focus();
+      deleteButton.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+      );
+
+      expect(deleteButton.getAttribute('aria-pressed')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('space activates buttons', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.focus();
+      addButton.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: ' ', bubbles: true })
+      );
+
+      const rows = el.shadowRoot?.querySelectorAll('[role="listitem"]');
+      expect(rows?.length).toBe(1);
+
+      document.body.removeChild(el);
+    });
+
+    test('escape moves focus to the Add button', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+
+      input.focus();
+      input.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })
+      );
+
+      expect(el.shadowRoot?.activeElement).toBe(addButton);
+
+      document.body.removeChild(el);
+    });
+
+    test('tab exits the component after the last control', () => {
+      const before = document.createElement('button');
+      before.textContent = 'before';
+      const after = document.createElement('button');
+      after.textContent = 'after';
+
+      document.body.appendChild(before);
+
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      document.body.appendChild(after);
+
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+
+      removeButton.focus();
+      removeButton.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true })
+      );
+
+      expect(document.activeElement).toBe(after);
+
+      document.body.removeChild(before);
+      document.body.removeChild(after);
+      document.body.removeChild(el);
+    });
+
+    test('arrow keys do not trigger item changes', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+
+      input.focus();
+      input.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true })
+      );
+
+      expect(el.items).toHaveLength(1);
+      expect(el.shadowRoot?.activeElement).toBe(input);
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Focus Management', () => {
+    test('focus remains on invalid input after validation error', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.focus();
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(el.shadowRoot?.activeElement).toBe(input);
+
+      document.body.removeChild(el);
+    });
+
+    test('hard remove from middle focuses Add button', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a","b","c"]');
+      document.body.appendChild(el);
+
+      const rows = Array.from(
+        el.shadowRoot?.querySelectorAll('[role="listitem"]') || []
+      );
+      const removeButton = rows[1].querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      expect(el.shadowRoot?.activeElement).toBe(addButton);
+
+      document.body.removeChild(el);
+    });
+
+    test('tabbing during edit stays within the component', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+
+      input.focus();
+      input.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true })
+      );
+
+      expect(el.shadowRoot?.activeElement).toBe(deleteButton);
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Screen Reader Announcements', () => {
+    test('announces when item is added', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const liveRegion = el.shadowRoot?.querySelector(
+        '[aria-live]'
+      ) as HTMLElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+
+      expect(liveRegion.textContent?.toLowerCase()).toContain('added');
+
+      document.body.removeChild(el);
+    });
+
+    test('announces when item is deleted', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const liveRegion = el.shadowRoot?.querySelector(
+        '[aria-live]'
+      ) as HTMLElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteButton.click();
+
+      expect(liveRegion.textContent?.toLowerCase()).toContain('deleted');
+
+      document.body.removeChild(el);
+    });
+
+    test('announces when item is restored', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const liveRegion = el.shadowRoot?.querySelector(
+        '[aria-live]'
+      ) as HTMLElement;
+      const deleteButton = el.shadowRoot?.querySelector(
+        'button[data-action="delete"]'
+      ) as HTMLButtonElement;
+      deleteButton.click();
+      deleteButton.click();
+
+      expect(liveRegion.textContent?.toLowerCase()).toContain('restored');
+
+      document.body.removeChild(el);
+    });
+
+    test('announces when item is removed', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const liveRegion = el.shadowRoot?.querySelector(
+        '[aria-live]'
+      ) as HTMLElement;
+      const removeButton = el.shadowRoot?.querySelector(
+        'button[data-action="remove"]'
+      ) as HTMLButtonElement;
+      removeButton.click();
+
+      expect(liveRegion.textContent?.toLowerCase()).toContain('removed');
+
+      document.body.removeChild(el);
+    });
+
+    test('announces validation errors', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('items', '["a"]');
+      document.body.appendChild(el);
+
+      const liveRegion = el.shadowRoot?.querySelector(
+        '[aria-live]'
+      ) as HTMLElement;
+      const input = el.shadowRoot?.querySelector(
+        'input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(liveRegion.textContent?.toLowerCase()).toContain('required');
+
+      document.body.removeChild(el);
+    });
+
+    test('does not duplicate announcements for rapid actions', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const liveRegion = el.shadowRoot?.querySelector(
+        '[aria-live]'
+      ) as HTMLElement;
+      const addButton = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      addButton.click();
+      addButton.click();
+
+      expect(liveRegion.getAttribute('data-announce-seq')).toBe('2');
+
+      document.body.removeChild(el);
+    });
+  });
 });

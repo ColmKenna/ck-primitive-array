@@ -4,7 +4,7 @@
 
 ### What is CkPrimitiveArray?
 
-`CkPrimitiveArray` is a simple, reusable web component that displays a personalized greeting message. It demonstrates best practices for building web components using native browser APIs without frameworks.
+`CkPrimitiveArray` is a reusable web component for editing a list of primitive values (strings, numbers, booleans). It provides add/remove controls, soft delete/undo, validation, form participation via hidden inputs, and built-in accessibility. The component also renders a header that uses the `name` and `color` attributes.
 
 ### Quick Start
 
@@ -27,14 +27,17 @@ Import and use in your HTML:
     </script>
 </head>
 <body>
-    <!-- Default greeting: "Hello, World!" -->
+    <!-- Empty list -->
     <ck-primitive-array></ck-primitive-array>
     
-    <!-- Custom name: "Hello, Alice!" -->
-    <ck-primitive-array name="Alice"></ck-primitive-array>
+    <!-- Declarative items -->
+    <ck-primitive-array items='["apple", "banana"]'></ck-primitive-array>
     
-    <!-- Custom name and color -->
-    <ck-primitive-array name="Bob" color="#0066cc"></ck-primitive-array>
+    <!-- Form-friendly list (name also used for header text) -->
+    <ck-primitive-array name="tags" items='["alpha", "beta"]'></ck-primitive-array>
+    
+    <!-- Custom header color -->
+    <ck-primitive-array name="tasks" color="#0066cc" items='["Plan", "Build"]'></ck-primitive-array>
 </body>
 </html>
 ```
@@ -46,7 +49,7 @@ Import and use in your HTML:
 ##### `name`
 - **Type**: String
 - **Default**: "World"
-- **Description**: The name to display in the greeting
+- **Description**: Used for the header text and as the name for active hidden inputs (`name[]`)
 
 ```html
 <ck-primitive-array name="Developer"></ck-primitive-array>
@@ -189,6 +192,13 @@ User edits input → Presses Ctrl/Cmd+Enter → Current value saved → Form sub
   <button type="submit">Submit</button>
 </form>
 ```
+
+#### Tab Navigation, Button Activation, and Escape
+
+**Keyboard Behaviors**:
+- **Tab / Shift+Tab**: Moves between Add → Input → Delete → Remove → next row (Shift+Tab reverses). Tab on the last control exits the component.
+- **Enter / Space on buttons**: Activates the focused button (Add, Delete/Undo, Remove).
+- **Escape on input**: Moves focus to the Add button.
 
 ### Inline Editing
 
@@ -461,18 +471,20 @@ The component automatically prevents form submission when validation fails. No a
 
 #### Accessibility
 
-Each input has a descriptive ARIA label that updates with the value:
+Each input has a descriptive ARIA label that includes index and value:
 ```html
-<!-- User types "apple" -->
-<input type="text" aria-label="Item: apple" value="apple" />
+<!-- First item "apple" -->
+<input type="text" aria-label="Item 1: apple" value="apple" />
 
-<!-- User changes to "orange" -->
-<input type="text" aria-label="Item: orange" value="orange" />
+<!-- Second item "orange" -->
+<input type="text" aria-label="Item 2: orange" value="orange" />
 ```
 
-This provides context for screen reader users navigating between items.
+Buttons include matching labels (Delete/Restore/Remove) and update on edit or re-index.
 
-When an input is invalid, it is linked to its error message via `aria-describedby`, pointing at the specific error element for that row.
+When an input is invalid, it is linked to its error message via `aria-describedby`, pointing at the specific error element for that row. The list also sets `aria-required` when `required` is present.
+
+An `aria-live="polite"` region announces add/delete/restore/remove actions and validation errors.
 
 ### JavaScript API
 
@@ -809,7 +821,12 @@ The component uses Shadow DOM, so its internal styles are encapsulated. The comp
 
 ### Accessibility
 
-The component uses semantic HTML (`<h1>` for the greeting, `<p>` for the subtitle) which works well with screen readers.
+Accessibility features include:
+- List semantics (`role="list"` / `role="listitem"`)
+- Index-aware `aria-label`s for inputs and buttons
+- `aria-invalid`, `aria-disabled`, `aria-readonly`, and `aria-required` states
+- `aria-live="polite"` announcements for add/delete/restore/remove and validation errors
+- Keyboard navigation with Tab/Shift+Tab, Enter/Space activation, and Escape focus management
 
 ### Troubleshooting
 

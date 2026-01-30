@@ -1024,6 +1024,28 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
   <span class="highlight">allow-duplicates</span>
 <span class="keyword">&gt;&lt;/ck-primitive-array&gt;</span></code></pre>
         </div>
+
+        <div class="section" id="accessibility-demo">
+            <h2>Accessibility & Keyboard</h2>
+            <p>
+                Use Tab/Shift+Tab to move through controls, Enter/Space to activate buttons,
+                and Escape to return focus to Add. Inputs and buttons include index-aware ARIA
+                labels, and actions are announced via an aria-live region.
+            </p>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Keyboard Navigation</h3>
+                    <ck-primitive-array id="accessibilityArray" items='["alpha", "beta"]'></ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Try Tab → Delete → Remove, Enter adds, Escape focuses Add
+                    </p>
+                </div>
+                <div class="demo-item">
+                    <h3>ARIA Labels & Announcements</h3>
+                    <pre id="accessibilityOutput">(loading...)</pre>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -1169,6 +1191,27 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
             element.style.marginBottom = '1rem';
             container.appendChild(element);
         });
+
+        // Accessibility preview (ARIA labels + live region text)
+        const accessibilityArray = document.getElementById('accessibilityArray');
+        const accessibilityOutput = document.getElementById('accessibilityOutput');
+
+        const updateAccessibilityOutput = () => {
+            if (!accessibilityArray || !accessibilityOutput) return;
+            const inputs = Array.from(
+                accessibilityArray.shadowRoot?.querySelectorAll('input[type="text"]') || []
+            );
+            const labels = inputs.map(input => `- ${input.getAttribute('aria-label') || ''}`).join('\n');
+            const liveRegion = accessibilityArray.shadowRoot?.querySelector('[aria-live]');
+            const liveText = liveRegion?.textContent ? liveRegion.textContent.trim() : '(none)';
+            accessibilityOutput.textContent = `ARIA labels:\n${labels || '(none)'}\n\nLast announcement:\n${liveText}`;
+        };
+
+        if (accessibilityArray && accessibilityOutput) {
+            updateAccessibilityOutput();
+            accessibilityArray.addEventListener('change', updateAccessibilityOutput);
+            accessibilityArray.shadowRoot?.addEventListener('input', updateAccessibilityOutput);
+        }
     </script>
 </body>
 </html>

@@ -177,16 +177,17 @@ private render() {
 <div class="ck-primitive-array">
   <h1 class="ck-primitive-array__message">Hello, ${this.name}!</h1>
   <div class="ck-primitive-array__controls">
-    <button type="button" class="add-item">Add</button>
+    <button type="button" class="add-item" aria-label="Add item">Add</button>
   </div>
-  <div class="ck-primitive-array__list" role="list" aria-label="items">
+  <div class="ck-primitive-array__list" role="list" aria-label="Items">
     <p class="ck-primitive-array__placeholder">No items</p>
     <div class="ck-primitive-array__item" role="listitem">
-      <input type="text" value="${item.value}" aria-label="Item: ${item.value}" />
-      <button type="button" data-action="delete">Delete</button>
-      <button type="button" data-action="remove">X</button>
+      <input type="text" value="${item.value}" aria-label="Item 1: ${item.value}" />
+      <button type="button" data-action="delete" aria-label="Delete Item 1: ${item.value}">Delete</button>
+      <button type="button" data-action="remove" aria-label="Remove Item 1: ${item.value}">X</button>
     </div>
   </div>
+  <div class="ck-primitive-array__live" aria-live="polite" aria-atomic="true" role="status"></div>
   <p class="ck-primitive-array__subtitle">Welcome to our Web Component Library</p>
 </div>
 ```
@@ -318,7 +319,7 @@ The `addItem(value?: string)` method is **public** and:
 
 The Add button's click handler calls `addItem()` with no argument.
 
-The Add button is disabled when the `readonly` or `disabled` boolean attribute is present on the host element. This state is updated on every render via `this.addButton.disabled`.
+The Add button is disabled when `readonly`, `disabled`, or `max` constraints apply. The component also mirrors this state via `aria-disabled`.
 
 ### Keyboard Event Handling
 
@@ -360,6 +361,30 @@ input.addEventListener('keydown', (e: KeyboardEvent) => {
 - Listener removed automatically when input is removed from DOM
 - No explicit cleanup needed (browser handles garbage collection)
 
+#### Tab Navigation and Button Activation
+
+The shadow root listens for keydown events to manage focus order and button activation:
+
+```typescript
+this.shadow.addEventListener('keydown', (event) => {
+  if (event.key === 'Tab') {
+    // Move focus to next/previous focusable control
+  }
+
+  if (event.target instanceof HTMLButtonElement &&
+      (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault();
+    event.target.click();
+  }
+});
+```
+
+**Behavior**:
+- Tab/Shift+Tab move between Add → Input → Delete → Remove → next row
+- Tab exits after the last control to the next focusable element in the document
+- Enter/Space activate focused buttons
+- Escape on inputs moves focus to the Add button
+
 **Design Decisions**:
 - ✅ Inline handler (simple, no need for bound method storage)
 - ✅ Ctrl/Cmd+Enter uses standard `requestSubmit()` for validation
@@ -377,45 +402,19 @@ Each item input supports real-time inline editing with change events, form integ
 
 #### Input Event Listener
 
-Located in `createItemRow()` method at lines 268-294:
+Located in `createItemRow()` method:
 
 ```typescript
 input.addEventListener('input', () => {
-  // 1. Update internal state
-  itemState.value = input.value;
-
-  // 2. Update ARIA label for accessibility
-  input.setAttribute('aria-label', `Item: ${input.value}`);
-
-  // 3. Sync hidden input (if exists)
-  if (hiddenInput) {
-    hiddenInput.value = input.value;
-  }
-
-  // 4. Validation: empty value check
-  if (input.value === '') {
-    input.setAttribute('aria-invalid', 'true');
-    itemRow.classList.add('has-error');
-  } else {
-    input.removeAttribute('aria-invalid');
-    itemRow.classList.remove('has-error');
-  }
-
-  // 5. Dispatch change event
-  this.dispatchEvent(
-    new CustomEvent('change', {
-      bubbles: true,
-      detail: { items: this.items },
-    })
-  );
+  this.commitInputValue(itemState, input, itemRow, true);
 });
 ```
 
-**Execution Order**:
+**Execution Order (via `commitInputValue`)**:
 1. **State Update**: `itemState.value` updated first (source of truth)
-2. **ARIA Update**: Dynamic label for screen readers
+2. **ARIA Update**: Labels refreshed via `updateAriaLabels()` using index + value
 3. **Hidden Input Sync**: Form integration (if `name` attribute set)
-4. **Validation**: Empty value detection
+4. **Validation**: Error message + `aria-invalid` handling
 5. **Event Dispatch**: Notify parent component/application
 
 **Performance Note**: Dispatches change event on EVERY keystroke. For performance-critical applications, consider debouncing.
@@ -443,19 +442,19 @@ if (formName) {
 
 #### ARIA Accessibility
 
-Lines 250-251, 271-272:
-```typescript
-// Initial setup
-input.setAttribute('aria-label', `Item: ${itemState.value}`);
+ARIA labels are derived from index + value:
 
-// Dynamic update
-input.setAttribute('aria-label', `Item: ${input.value}`);
+```typescript
+const label = this.formatItemLabel(index, value); // "Item 1: apple"
+input.setAttribute('aria-label', label);
+deleteButton.setAttribute('aria-label', `Delete ${label}`);
+removeButton.setAttribute('aria-label', `Remove ${label}`);
 ```
 
 **Accessibility Benefits**:
-- Screen readers announce item context ("Item: apple")
-- Updates reflect current value (not stale)
-- Distinguishes between multiple inputs in list
+- Screen readers announce item context with position ("Item 1: apple")
+- Labels update on edit and re-index on removal
+- Buttons carry descriptive labels for delete/restore/remove actions
 
 #### Soft-Delete Support
 
@@ -788,14 +787,15 @@ private attachFormValidation(): void {
 // aria-invalid on items
 input.setAttribute('aria-invalid', 'true');
 
-// aria-label with dynamic value
-input.setAttribute('aria-label', `Item: ${input.value}`);
+// aria-label with dynamic index + value
+input.setAttribute('aria-label', `Item 1: ${input.value}`);
 ```
 
 **Screen Reader Announcements**:
 - Invalid state announced via `aria-invalid`
 - Error message available in DOM
-- Item context via aria-label
+- Item context via index-aware aria-labels
+- Live region announces add/delete/restore/remove and validation errors
 
 ### Error Message Styling
 

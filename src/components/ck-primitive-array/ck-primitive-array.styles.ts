@@ -43,6 +43,17 @@ export const ckPrimitiveArrayCSS = `
   gap: 0.5rem;
 }
 
+.ck-primitive-array__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
+
 .ck-primitive-array__item {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -77,6 +88,14 @@ export const ckPrimitiveArrayCSS = `
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.85rem;
+}
+
+.ck-primitive-array__input:focus-visible,
+.ck-primitive-array__delete:focus-visible,
+.ck-primitive-array__remove:focus-visible,
+.add-item:focus-visible {
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
 }
 
 .ck-primitive-array__delete {
