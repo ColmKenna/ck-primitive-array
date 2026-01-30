@@ -595,20 +595,24 @@ private validateItemValue(value: string, itemState): string | null {
 
 #### commitInputValue() Integration
 
-The `commitInputValue()` method always calls `validateItemValue()` on every input event:
+The `commitInputValue()` method always calls `validateItemValue()` on every input event (including paste):
 
 ```typescript
 const error = this.validateItemValue(value, itemState);
 if (error) {
   // Create/update error display
-  const errorDiv = itemRow.querySelector('[data-error]') || 
+  const errorId = `ckpa-error-${itemState.id}`;
+  const errorDiv = itemRow.querySelector(`#${errorId}`) || 
                    document.createElement('div');
-  errorDiv.setAttribute('data-error', error);
+  errorDiv.setAttribute('data-error', '');
+  errorDiv.id = errorId;
+  errorDiv.className = 'ck-primitive-array__error has-error';
   errorDiv.textContent = error;
   itemRow.appendChild(errorDiv);
 
   // Set accessibility attributes
   input.setAttribute('aria-invalid', 'true');
+  input.setAttribute('aria-describedby', errorId);
   input.classList.add('has-error');
   itemRow.classList.add('has-error');
 } else {
@@ -616,15 +620,18 @@ if (error) {
   const errorDiv = itemRow.querySelector('[data-error]');
   if (errorDiv) errorDiv.remove();
   input.removeAttribute('aria-invalid');
+  input.removeAttribute('aria-describedby');
   input.classList.remove('has-error');
   itemRow.classList.remove('has-error');
 }
 ```
 
 **Error Display**:
-- `[data-error]` div with error message text
-- `aria-invalid="true"` on input for accessibility
-- `.has-error` class on both input and itemRow for styling
+- `[data-error]` div with error message text and stable id
+- `aria-invalid="true"` on invalid inputs
+- `aria-describedby` links input to its error element
+- `.has-error` class on input, item row, and error element
+- Error is rendered inside the row below the input controls
 
 ### List-Level Validation
 

@@ -279,6 +279,11 @@ Hidden inputs ensure that form submissions always include the current component 
 
 The component provides comprehensive validation covering item-level and list-level constraints with full accessibility support.
 
+**Live Validation Timing**:
+- Validation runs on every input event (keystroke or paste)
+- Errors appear immediately on invalid input
+- Errors clear immediately on correction
+
 ##### Item-Level Validation
 
 Each item value is validated against multiple constraints:
@@ -424,6 +429,11 @@ Style validation errors with CSS:
   font-size: 0.85rem;
   margin-top: 0.25rem;
 }
+
+/* Error element can also target the explicit class */
+.ck-primitive-array__error.has-error {
+  color: #d32f2f;
+}
 ```
 
 ##### Checking Validity in JavaScript
@@ -454,6 +464,8 @@ Each input has a descriptive ARIA label that updates with the value:
 ```
 
 This provides context for screen reader users navigating between items.
+
+When an input is invalid, it is linked to its error message via `aria-describedby`, pointing at the specific error element for that row.
 
 ### JavaScript API
 

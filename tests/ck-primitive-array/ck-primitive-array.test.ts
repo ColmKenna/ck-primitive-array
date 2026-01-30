@@ -3212,4 +3212,383 @@ describe('CkPrimitiveArray Component', () => {
       document.body.removeChild(el);
     });
   });
+
+  describe('Error Display', () => {
+    test('should show error for the specific invalid input', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      el.setAttribute('items', '["alpha", "beta"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+
+      inputs[0].value = 'a';
+      inputs[0].dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const firstRow = inputs[0].closest('[role="listitem"]');
+      const secondRow = inputs[1].closest('[role="listitem"]');
+      const firstError = firstRow?.querySelector('[data-error]');
+      const secondError = secondRow?.querySelector('[data-error]');
+
+      expect(firstError).toBeTruthy();
+      expect(secondError).not.toBeTruthy();
+
+      const children = Array.from(firstRow?.children || []);
+      const errorIndex = children.findIndex(child => child === firstError);
+      const inputIndex = children.indexOf(inputs[0]);
+      expect(errorIndex).toBeGreaterThan(inputIndex);
+
+      document.body.removeChild(el);
+    });
+
+    test('should apply error class to the error message', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-error]');
+      expect(errorMsg?.classList.contains('has-error')).toBe(true);
+
+      document.body.removeChild(el);
+    });
+
+    test('should show errors independently for multiple invalid rows', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      el.setAttribute('items', '["aa", "bb"]');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const inputs = Array.from(
+        el.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+
+      inputs.forEach(input => {
+        input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      });
+
+      const rows = Array.from(
+        el.shadowRoot?.querySelectorAll('[role="listitem"]') || []
+      );
+      rows.forEach(row => {
+        const error = row.querySelector('[data-error]');
+        expect(error).toBeTruthy();
+      });
+
+      document.body.removeChild(el);
+    });
+
+    test('should remove error element when value becomes valid', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(el.shadowRoot?.querySelector('[data-error]')).toBeTruthy();
+
+      input.value = 'valid';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(el.shadowRoot?.querySelector('[data-error]')).not.toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should provide descriptive error messages', () => {
+      const getErrorText = (target: CkPrimitiveArray) =>
+        target.shadowRoot?.querySelector('[data-error]')?.textContent || '';
+
+      const requiredEl = new CkPrimitiveArray();
+      document.body.appendChild(requiredEl);
+      const requiredBtn = requiredEl.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      requiredBtn.click();
+      const requiredInput = requiredEl.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      requiredInput.value = '';
+      requiredInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(getErrorText(requiredEl)).toMatch(/required/i);
+      document.body.removeChild(requiredEl);
+
+      const minEl = new CkPrimitiveArray();
+      minEl.setAttribute('minlength', '3');
+      document.body.appendChild(minEl);
+      const minBtn = minEl.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      minBtn.click();
+      const minInput = minEl.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      minInput.value = 'ab';
+      minInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(getErrorText(minEl)).toMatch(/at least/i);
+      document.body.removeChild(minEl);
+
+      const maxEl = new CkPrimitiveArray();
+      maxEl.setAttribute('maxlength', '2');
+      document.body.appendChild(maxEl);
+      const maxBtn = maxEl.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      maxBtn.click();
+      const maxInput = maxEl.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      maxInput.value = 'abcd';
+      maxInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(getErrorText(maxEl)).toMatch(/no more than/i);
+      document.body.removeChild(maxEl);
+
+      const patternEl = new CkPrimitiveArray();
+      patternEl.setAttribute('pattern', '[a-z]+');
+      document.body.appendChild(patternEl);
+      const patternBtn = patternEl.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      patternBtn.click();
+      const patternInput = patternEl.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      patternInput.value = '123';
+      patternInput.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(getErrorText(patternEl)).toMatch(/format/i);
+      document.body.removeChild(patternEl);
+
+      const duplicateEl = new CkPrimitiveArray();
+      duplicateEl.setAttribute('items', '["apple", "banana"]');
+      document.body.appendChild(duplicateEl);
+      duplicateEl.connectedCallback();
+      const duplicateInputs = Array.from(
+        duplicateEl.shadowRoot?.querySelectorAll(
+          '[role="listitem"] input[type="text"]'
+        ) || []
+      ) as HTMLInputElement[];
+      duplicateInputs[1].value = 'apple';
+      duplicateInputs[1].dispatchEvent(
+        new window.Event('input', { bubbles: true })
+      );
+      expect(getErrorText(duplicateEl)).toMatch(/exist/i);
+      document.body.removeChild(duplicateEl);
+    });
+
+    test('should link input to error with aria-describedby', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const describedBy = input.getAttribute('aria-describedby');
+      expect(describedBy).toBeTruthy();
+
+      const error = el.shadowRoot?.getElementById(describedBy || '');
+      expect(error).toBeTruthy();
+      expect(error?.textContent).not.toBe('');
+
+      document.body.removeChild(el);
+    });
+
+    test('should show list level required error when empty', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('required', '');
+      document.body.appendChild(el);
+      el.connectedCallback();
+
+      const error = el.shadowRoot?.querySelector('[data-required-error]');
+      expect(error).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should prioritize empty error over pattern error', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('pattern', '[a-z]+');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const errorMsg = el.shadowRoot?.querySelector('[data-error]');
+      expect(errorMsg?.textContent).toContain('required');
+      expect(errorMsg?.textContent).not.toContain('format');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('Live Validation Timing', () => {
+    test('should validate on every input event', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+
+      input.value = 'a';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      input.value = 'ab';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      input.value = 'abc';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should show error immediately on invalid input', () => {
+      const el = new CkPrimitiveArray();
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = '';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      const error = el.shadowRoot?.querySelector('[data-error]');
+      expect(error).toBeTruthy();
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should clear error immediately when corrected', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'a';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(el.shadowRoot?.querySelector('[data-error]')).toBeTruthy();
+
+      input.value = 'abcd';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+      expect(el.shadowRoot?.querySelector('[data-error]')).not.toBeTruthy();
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+
+      document.body.removeChild(el);
+    });
+
+    test('should validate without delay on rapid input', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '3');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'a';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      input.value = 'abcd';
+      input.dispatchEvent(new window.Event('input', { bubbles: true }));
+
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+      expect(el.shadowRoot?.querySelector('[data-error]')).not.toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+
+    test('should validate when content is pasted', () => {
+      const el = new CkPrimitiveArray();
+      el.setAttribute('minlength', '5');
+      document.body.appendChild(el);
+
+      const btn = el.shadowRoot?.querySelector(
+        'button.add-item'
+      ) as HTMLButtonElement;
+      btn.click();
+
+      const input = el.shadowRoot?.querySelector(
+        '[role="listitem"] input[type="text"]'
+      ) as HTMLInputElement;
+      input.value = 'abc';
+      const pasteEvent =
+        typeof window.InputEvent === 'function'
+          ? new window.InputEvent('input', {
+              bubbles: true,
+              inputType: 'insertFromPaste',
+            })
+          : new window.Event('input', { bubbles: true });
+      input.dispatchEvent(pasteEvent);
+
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+      expect(el.shadowRoot?.querySelector('[data-error]')).toBeTruthy();
+
+      document.body.removeChild(el);
+    });
+  });
 });

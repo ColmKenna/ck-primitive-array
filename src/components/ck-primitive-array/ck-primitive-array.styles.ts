@@ -57,6 +57,19 @@ export const ckPrimitiveArrayCSS = `
   font-size: 0.95rem;
 }
 
+.ck-primitive-array__item.has-error .ck-primitive-array__input {
+  border-color: #d73a49;
+  background: #fff5f5;
+}
+
+.ck-primitive-array__error {
+  grid-column: 1 / -1;
+  color: #d73a49;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  text-align: left;
+}
+
 .ck-primitive-array__delete,
 .ck-primitive-array__remove {
   border: none;

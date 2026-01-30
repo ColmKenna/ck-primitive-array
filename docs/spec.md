@@ -204,27 +204,35 @@ itemState.deleted = true; // Input becomes disabled
 
 #### Validation
 
-Empty values trigger validation error indicators:
+Validation runs on every input event (including paste) and displays per-item errors inline.
 
-**Visual Indicators**:
-- `aria-invalid="true"` attribute on input
-- `.has-error` CSS class on item row
+**Error Display**:
+- Error element rendered inside the item row under the input controls
+- Each row gets its own error element (no shared/global error message)
+- Error element uses `data-error` plus CSS classes for styling
 
-**Validation Logic**:
-```javascript
-if (input.value === '') {
-  input.setAttribute('aria-invalid', 'true');
-  itemRow.classList.add('has-error');
-} else {
-  input.removeAttribute('aria-invalid');
-  itemRow.classList.remove('has-error');
-}
+```html
+<div data-error id="ckpa-error-item-3" class="ck-primitive-array__error has-error">
+  Must be at least 3 characters.
+</div>
 ```
 
+**Accessibility**:
+- `aria-invalid="true"` on invalid inputs
+- `aria-describedby="ckpa-error-{itemId}"` links the input to its error
+- `has-error` class applied to input, row, and error element
+
+**Priority Order**:
+1. Empty/whitespace (required)
+2. Minlength
+3. Maxlength
+4. Pattern
+5. Duplicate detection
+
 **Use Cases**:
-- Form validation styling
-- Accessibility announcements
-- Custom error messages via CSS
+- Real-time validation feedback
+- Clear, descriptive error messages per constraint
+- Screen reader support via `aria-describedby`
 
 ### Soft Delete & Undo (Phase 2.2 & 2.3)
 
@@ -1052,7 +1060,7 @@ element.setAttribute('color', 'blue');
 88. ✅ Empty list submits no values (3.5.5)
 89. ✅ Validation prevents submission (3.5.6)
 
-**Total**: 116 tests passing
+**Total**: 166 tests passing
 5. ✅ Render content in shadow DOM
 6. ✅ Attribute change updates
 7. ✅ Observed attributes list

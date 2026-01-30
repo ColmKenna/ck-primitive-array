@@ -846,6 +846,7 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
         <div class="section">
             <h2>16. Validation & Constraints</h2>
             <p>The component supports comprehensive validation including empty/whitespace rejection, duplicates, length constraints, pattern matching, and list-level constraints.</p>
+            <p><strong>Live feedback:</strong> Errors appear immediately as you type or paste, and each input is linked to its error message via <code>aria-describedby</code>.</p>
 
             <h3>Empty & Whitespace Rejection</h3>
             <div class="demo-grid">
@@ -868,6 +869,21 @@ el.<span class="highlight">addItem</span>();             <span class="comment">/
                     </ck-primitive-array>
                     <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
                         💡 Whitespace-only inputs are treated as empty
+                    </p>
+                </div>
+            </div>
+
+            <h3>Live Error Display</h3>
+            <div class="demo-grid">
+                <div class="demo-item">
+                    <h3>Type to see errors update</h3>
+                    <ck-primitive-array
+                        minlength="5"
+                        name="liveValidation"
+                        items='[""]'>
+                    </ck-primitive-array>
+                    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                        💡 Errors render below the input and clear immediately when valid
                     </p>
                 </div>
             </div>

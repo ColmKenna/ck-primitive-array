@@ -310,20 +310,31 @@ export class CkPrimitiveArray extends HTMLElement {
       input.classList.add('has-error');
       itemRow.classList.add('has-error');
 
-      // Remove old error message if exists
-      const oldError = itemRow.querySelector('[data-error]');
-      if (oldError) {
-        oldError.remove();
+      const errorId = `ckpa-error-${itemState.id}`;
+      let errorEl = itemRow.querySelector(
+        `#${errorId}`
+      ) as HTMLDivElement | null;
+
+      if (!errorEl) {
+        // Remove old error message if exists
+        const oldError = itemRow.querySelector('[data-error]');
+        if (oldError) {
+          oldError.remove();
+        }
+
+        // Create and add error message
+        errorEl = document.createElement('div');
+        errorEl.setAttribute('data-error', '');
+        errorEl.id = errorId;
+        itemRow.appendChild(errorEl);
       }
 
-      // Create and add error message
-      const errorEl = document.createElement('div');
-      errorEl.setAttribute('data-error', '');
-      errorEl.className = 'ck-primitive-array__error';
+      errorEl.className = 'ck-primitive-array__error has-error';
       errorEl.textContent = errorMessage;
-      itemRow.appendChild(errorEl);
+      input.setAttribute('aria-describedby', errorId);
     } else {
       input.removeAttribute('aria-invalid');
+      input.removeAttribute('aria-describedby');
       input.classList.remove('has-error');
       itemRow.classList.remove('has-error');
       const oldError = itemRow.querySelector('[data-error]');
