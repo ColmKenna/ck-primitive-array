@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edge Cases - ck-primitive-array</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    nav { padding: 16px 24px; background: #0f172a; }
+    nav a { color: #e2e8f0; text-decoration: none; }
+    main { max-width: 1100px; margin: 24px auto 64px; padding: 0 24px; }
+    section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    button {
+      background: #0f172a;
+      color: #f8fafc;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    button.secondary { background: #e2e8f0; color: #0f172a; }
+    .note { font-size: 0.9rem; color: #475569; }
+    .status {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Back to Documentation</a></nav>
+  <main>
+    <h1>Edge Cases</h1>
+    <p>Unusual inputs, invalid attributes, and recovery patterns.</p>
+
+    <section id="items-filtering">
+      <h2>Filtering Non-Primitives</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array
+            name="Mixed Data"
+            items='["text", 42, true, null, {"x":1}, [1,2], false]'>
+          </ck-primitive-array>
+          <p class="note">Objects, arrays, and null are filtered out. Only primitives remain.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="invalid-json">
+      <h2>Invalid JSON in items Attribute</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="invalidJsonArray" name="Invalid JSON" items='["valid"]'></ck-primitive-array>
+          <div style="margin-top: 10px; display: grid; gap: 8px;">
+            <button type="button" id="setInvalidJson">Set invalid JSON</button>
+            <button type="button" class="secondary" id="recoverJson">Recover with valid JSON</button>
+          </div>
+          <p class="note">Invalid JSON logs an error and resets the list to empty.</p>
+          <div class="status" id="invalidJsonStatus">items: valid</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="duplicate-edge">
+      <h2>Duplicate Values</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="duplicateArray" name="Duplicates" items='["alpha", "beta"]'></ck-primitive-array>
+          <p class="note">Try editing beta to alpha to see duplicate validation.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="pattern-edge">
+      <h2>Invalid Pattern</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="patternEdgeArray" name="Pattern" pattern="[a-z" items='["abc", "123"]'></ck-primitive-array>
+          <p class="note">Invalid regex logs an error and skips pattern validation.</p>
+        </div>
+        <div class="card">
+          <button type="button" id="fixPattern">Fix pattern to [a-z]+</button>
+          <p class="note">Click to apply a valid pattern and see validation update.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="soft-delete-edge">
+      <h2>Soft Delete vs Hard Remove</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="deleteEdgeArray" name="Edge" items='["keep", "soft delete", "hard remove"]'></ck-primitive-array>
+          <p class="note">Use Delete to toggle soft delete, or X to remove permanently.</p>
+        </div>
+        <div class="card">
+          <div class="status" id="deleteEdgeStatus">changes: none</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="long-values">
+      <h2>Long Values</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array
+            maxlength="20"
+            name="Long Values"
+            items='["this-is-a-very-long-value", "short"]'>
+          </ck-primitive-array>
+          <p class="note">Long strings trigger maxlength errors and can be trimmed before setting.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import '../../dist/ck-primitive-array/ck-primitive-array.esm.js';
+
+    const invalidJsonArray = document.getElementById('invalidJsonArray');
+    const invalidJsonStatus = document.getElementById('invalidJsonStatus');
+    const setInvalidJson = document.getElementById('setInvalidJson');
+    const recoverJson = document.getElementById('recoverJson');
+
+    const renderInvalidStatus = () => {
+      const values = (invalidJsonArray.items || []).map((item) => item.value).join(', ') || '(empty)';
+      invalidJsonStatus.textContent = `items: ${values}`;
+    };
+
+    if (setInvalidJson && invalidJsonArray) {
+      setInvalidJson.addEventListener('click', () => {
+        invalidJsonArray.setAttribute('items', '["oops",');
+        renderInvalidStatus();
+      });
+    }
+
+    if (recoverJson && invalidJsonArray) {
+      recoverJson.addEventListener('click', () => {
+        invalidJsonArray.setAttribute('items', '["recovered", "ok"]');
+        renderInvalidStatus();
+      });
+    }
+
+    const fixPattern = document.getElementById('fixPattern');
+    const patternEdgeArray = document.getElementById('patternEdgeArray');
+    if (fixPattern && patternEdgeArray) {
+      fixPattern.addEventListener('click', () => {
+        patternEdgeArray.setAttribute('pattern', '[a-z]+');
+      });
+    }
+
+    const deleteEdgeArray = document.getElementById('deleteEdgeArray');
+    const deleteEdgeStatus = document.getElementById('deleteEdgeStatus');
+    if (deleteEdgeArray && deleteEdgeStatus) {
+      deleteEdgeArray.addEventListener('change', (event) => {
+        const items = event.detail?.items || [];
+        const active = event.detail?.active;
+        const deleted = event.detail?.deleted;
+        const lines = [
+          `total: ${items.length}`,
+          `active: ${active ? active.join(', ') : '(not provided)'}`,
+          `deleted: ${deleted ? deleted.join(', ') : '(not provided)'}`
+        ];
+        deleteEdgeStatus.textContent = lines.join('\n');
+      });
+    }
+
+    renderInvalidStatus();
+  </script>
+</body>
+</html>

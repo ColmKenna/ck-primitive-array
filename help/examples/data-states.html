@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data States - ck-primitive-array</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    nav {
+      padding: 16px 24px;
+      background: #0f172a;
+    }
+    nav a { color: #e2e8f0; text-decoration: none; }
+    main {
+      max-width: 1100px;
+      margin: 24px auto 64px;
+      padding: 0 24px;
+    }
+    section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      position: relative;
+    }
+    .controls {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      margin-top: 12px;
+    }
+    button {
+      background: #0f172a;
+      color: #f8fafc;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    button.secondary { background: #e2e8f0; color: #0f172a; }
+    .note { font-size: 0.9rem; color: #475569; }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      color: #f8fafc;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border-radius: 10px;
+    }
+    .overlay.active { display: flex; }
+    .status {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      min-height: 60px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Back to Documentation</a></nav>
+  <main>
+    <h1>Data States</h1>
+    <p>Empty, loading, error, success, and operational states.</p>
+
+    <section id="empty-state">
+      <h2>Empty State</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Empty"></ck-primitive-array>
+          <p class="note">The list shows a placeholder when empty.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="loading-state">
+      <h2>Loading State (Simulated)</h2>
+      <div class="grid">
+        <div class="card" id="loadingCard">
+          <ck-primitive-array id="loadingArray" name="Loading" disabled items='["Loading..."]'></ck-primitive-array>
+          <div class="overlay" id="loadingOverlay">Loading...</div>
+          <p class="note">This component does not have a built-in loading flag. Disable it and show an overlay if needed.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="success-state">
+      <h2>Success State</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Success" items='["Approved", "Shipped"]'></ck-primitive-array>
+          <p class="note">Valid values and no constraints triggered.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="error-state">
+      <h2>Error State</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array minlength="4" name="Error" items='["bad", "okay"]'></ck-primitive-array>
+          <p class="note">Short values show inline errors with aria-invalid.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="minmax-demo">
+      <h2>min / max Constraints</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array min="2" max="4" name="Limits" items='["one"]'></ck-primitive-array>
+          <p class="note">Add until 2 items to satisfy min. Add stops at 4.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="readonly-state">
+      <h2>Readonly State</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Readonly" readonly items='["alpha", "beta"]'></ck-primitive-array>
+        </div>
+      </div>
+    </section>
+
+    <section id="disabled-state">
+      <h2>Disabled State</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Disabled" disabled items='["alpha", "beta"]'></ck-primitive-array>
+        </div>
+      </div>
+    </section>
+
+    <section id="dirty-pristine-demo">
+      <h2>Dirty / Pristine Tracking (External)</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="dirtyArray" name="Dirty Tracker" items='["start"]'></ck-primitive-array>
+          <div class="status" id="dirtyStatus">State: pristine</div>
+          <div class="controls">
+            <button type="button" id="markPristine">Mark pristine</button>
+            <button type="button" id="markDirty" class="secondary">Mark dirty</button>
+          </div>
+          <p class="note">The component does not track dirty/pristine internally. Track it in your app.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="state-transitions">
+      <h2>State Transitions</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="stateArray" name="Transitions"></ck-primitive-array>
+          <div class="controls">
+            <button type="button" data-state="empty">Empty</button>
+            <button type="button" data-state="loading">Loading</button>
+            <button type="button" data-state="success">Success</button>
+            <button type="button" data-state="error">Error</button>
+          </div>
+          <p class="note">Demonstrates empty -> loading -> success/error flows.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import '../../dist/ck-primitive-array/ck-primitive-array.esm.js';
+
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingArray = document.getElementById('loadingArray');
+    if (loadingOverlay && loadingArray) {
+      loadingOverlay.classList.add('active');
+      loadingArray.setAttribute('aria-busy', 'true');
+      setTimeout(() => {
+        loadingOverlay.classList.remove('active');
+        loadingArray.removeAttribute('aria-busy');
+        loadingArray.removeAttribute('disabled');
+        loadingArray.items = ['Loaded item'];
+      }, 1200);
+    }
+
+    const dirtyArray = document.getElementById('dirtyArray');
+    const dirtyStatus = document.getElementById('dirtyStatus');
+    const markPristine = document.getElementById('markPristine');
+    const markDirty = document.getElementById('markDirty');
+
+    if (dirtyArray && dirtyStatus && markPristine && markDirty) {
+      const setState = (state) => {
+        dirtyStatus.textContent = `State: ${state}`;
+      };
+      dirtyArray.addEventListener('change', () => setState('dirty'));
+      markPristine.addEventListener('click', () => setState('pristine'));
+      markDirty.addEventListener('click', () => setState('dirty'));
+    }
+
+    const stateArray = document.getElementById('stateArray');
+    const stateButtons = document.querySelectorAll('[data-state]');
+
+    const applyState = (state) => {
+      if (!stateArray) return;
+      if (state === 'empty') {
+        stateArray.items = [];
+        stateArray.removeAttribute('disabled');
+        stateArray.removeAttribute('minlength');
+      }
+      if (state === 'loading') {
+        stateArray.items = ['Loading...'];
+        stateArray.setAttribute('disabled', '');
+      }
+      if (state === 'success') {
+        stateArray.removeAttribute('disabled');
+        stateArray.items = ['Success', 'Ready'];
+      }
+      if (state === 'error') {
+        stateArray.removeAttribute('disabled');
+        stateArray.setAttribute('minlength', '5');
+        stateArray.items = ['bad'];
+      }
+    };
+
+    stateButtons.forEach((button) => {
+      button.addEventListener('click', () => applyState(button.dataset.state));
+    });
+  </script>
+</body>
+</html>

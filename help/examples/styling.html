@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Styling - ck-primitive-array</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    nav { padding: 16px 24px; background: #0f172a; }
+    nav a { color: #e2e8f0; text-decoration: none; }
+    main { max-width: 1200px; margin: 24px auto 64px; padding: 0 24px; }
+    section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    code {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.9em;
+    }
+    pre {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .note { font-size: 0.9rem; color: #475569; }
+
+    ck-primitive-array.part-demo::part(list) {
+      border: 1px dashed #94a3b8;
+      padding: 8px;
+      border-radius: 8px;
+      background: #f1f5f9;
+    }
+    ck-primitive-array.part-demo::part(row) {
+      background: #ffffff;
+      padding: 6px;
+      border-radius: 6px;
+    }
+    ck-primitive-array.part-demo::part(deleted) {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+    ck-primitive-array.part-demo::part(input) {
+      border-color: #38bdf8;
+    }
+    ck-primitive-array.part-demo::part(delete-button) {
+      background: #fee2e2;
+      color: #7f1d1d;
+    }
+    ck-primitive-array.part-demo::part(remove-button) {
+      background: #111827;
+      color: #f9fafb;
+    }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Back to Documentation</a></nav>
+  <main>
+    <h1>Styling</h1>
+    <p>CSS custom properties and shadow parts.</p>
+
+    <section id="css-var-background">
+      <h2>--ck-primitive-array-background</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Background" style="--ck-primitive-array-background:#e2e8f0;"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-background: #e2e8f0; }</code></pre>
+    </section>
+
+    <section id="css-var-color">
+      <h2>--ck-primitive-array-color</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Text Color" style="--ck-primitive-array-color:#0ea5e9;"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-color: #0ea5e9; }</code></pre>
+    </section>
+
+    <section id="css-var-padding">
+      <h2>--ck-primitive-array-padding</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Padding" style="--ck-primitive-array-padding:16px;"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-padding: 16px; }</code></pre>
+    </section>
+
+    <section id="css-var-border-radius">
+      <h2>--ck-primitive-array-border-radius</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Rounded" style="--ck-primitive-array-border-radius:12px;"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-border-radius: 12px; }</code></pre>
+    </section>
+
+    <section id="css-var-box-shadow">
+      <h2>--ck-primitive-array-box-shadow</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Shadow" style="--ck-primitive-array-box-shadow:0 12px 30px rgba(15,23,42,0.12);"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-box-shadow: 0 12px 30px rgba(15,23,42,0.12); }</code></pre>
+    </section>
+
+    <section id="css-var-text-align">
+      <h2>--ck-primitive-array-text-align</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Left aligned" style="--ck-primitive-array-text-align:left;"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-text-align: left; }</code></pre>
+    </section>
+
+    <section id="css-var-message-font-size">
+      <h2>--ck-primitive-array-message-font-size</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Large Title" style="--ck-primitive-array-message-font-size:2rem;"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-message-font-size: 2rem; }</code></pre>
+    </section>
+
+    <section id="css-var-subtitle-font-size">
+      <h2>--ck-primitive-array-subtitle-font-size</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Subtitle" style="--ck-primitive-array-subtitle-font-size:0.85rem;"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-subtitle-font-size: 0.85rem; }</code></pre>
+    </section>
+
+    <section id="css-var-subtitle-opacity">
+      <h2>--ck-primitive-array-subtitle-opacity</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Subtitle Opacity" style="--ck-primitive-array-subtitle-opacity:0.4;"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array { --ck-primitive-array-subtitle-opacity: 0.4; }</code></pre>
+    </section>
+
+    <section id="css-parts">
+      <h2>CSS Parts</h2>
+      <p class="note">Use <code>::part</code> selectors to style internal elements safely.</p>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array class="part-demo" name="Parts" items='["Alpha", "Beta", "Gamma"]'></ck-primitive-array>
+          <p class="note">Toggle Delete on a row to see <code>::part(deleted)</code> styling.</p>
+        </div>
+      </div>
+      <pre><code>ck-primitive-array.part-demo::part(list) { border: 1px dashed #94a3b8; }
+ck-primitive-array.part-demo::part(row) { background: #fff; }
+ck-primitive-array.part-demo::part(deleted) { opacity: 0.55; }
+ck-primitive-array.part-demo::part(input) { border-color: #38bdf8; }
+ck-primitive-array.part-demo::part(delete-button) { background: #fee2e2; }
+ck-primitive-array.part-demo::part(remove-button) { background: #111827; }</code></pre>
+
+      <h3 id="part-list">::part(list)</h3>
+      <p class="note">Targets the list wrapper element.</p>
+
+      <h3 id="part-row">::part(row)</h3>
+      <p class="note">Targets each row container.</p>
+
+      <h3 id="part-deleted">::part(deleted)</h3>
+      <p class="note">Targets rows that are soft-deleted.</p>
+
+      <h3 id="part-input">::part(input)</h3>
+      <p class="note">Targets the text input inside each row.</p>
+
+      <h3 id="part-delete-button">::part(delete-button)</h3>
+      <p class="note">Targets the delete/undo button.</p>
+
+      <h3 id="part-remove-button">::part(remove-button)</h3>
+      <p class="note">Targets the hard remove button.</p>
+    </section>
+  </main>
+
+  <script type="module">
+    import '../../dist/ck-primitive-array/ck-primitive-array.esm.js';
+  </script>
+</body>
+</html>

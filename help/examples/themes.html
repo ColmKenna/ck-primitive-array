@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Themes - ck-primitive-array</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    nav { padding: 16px 24px; background: #0f172a; }
+    nav a { color: #e2e8f0; text-decoration: none; }
+    main { max-width: 1400px; margin: 24px auto 64px; padding: 0 24px; }
+    section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .theme-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .theme-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .controls {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    label { font-weight: 600; display: block; margin-bottom: 6px; }
+    select, input, button {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #cbd5f5;
+      font-size: 0.95rem;
+    }
+    button { background: #0f172a; color: #f8fafc; border: none; cursor: pointer; }
+    button.secondary { background: #e2e8f0; color: #0f172a; }
+    pre {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .note { font-size: 0.9rem; color: #475569; }
+
+    ck-primitive-array {
+      --ck-primitive-array-padding: 12px;
+      --ck-primitive-array-border-radius: 10px;
+      --ck-primitive-array-box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    ck-primitive-array.theme-transition {
+      transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Theme definitions */
+    ck-primitive-array[theme="light"] {
+      --ck-primitive-array-background: #ffffff;
+      --ck-primitive-array-color: #111827;
+      --ck-primitive-array-box-shadow: 0 10px 26px rgba(15, 23, 42, 0.1);
+    }
+    ck-primitive-array[theme="light"]::part(input) { border-color: #cbd5f5; }
+    ck-primitive-array[theme="light"]::part(delete-button) { background: #e2e8f0; color: #0f172a; }
+    ck-primitive-array[theme="light"]::part(remove-button) { background: #dc2626; color: #fef2f2; }
+
+    ck-primitive-array[theme="dark"] {
+      --ck-primitive-array-background: #0f172a;
+      --ck-primitive-array-color: #f8fafc;
+      --ck-primitive-array-box-shadow: 0 12px 30px rgba(2, 6, 23, 0.65);
+    }
+    ck-primitive-array[theme="dark"]::part(input) { background: #111827; border-color: #334155; color: #f8fafc; }
+    ck-primitive-array[theme="dark"]::part(delete-button) { background: #1f2937; color: #e2e8f0; }
+    ck-primitive-array[theme="dark"]::part(remove-button) { background: #7f1d1d; color: #fef2f2; }
+
+    ck-primitive-array[theme="high-contrast"] {
+      --ck-primitive-array-background: #000000;
+      --ck-primitive-array-color: #ffffff;
+      --ck-primitive-array-border-radius: 0;
+      --ck-primitive-array-box-shadow: none;
+    }
+    ck-primitive-array[theme="high-contrast"]::part(input) { background: #000000; border-color: #ffffff; color: #ffffff; }
+    ck-primitive-array[theme="high-contrast"]::part(delete-button) { background: #ffffff; color: #000000; }
+    ck-primitive-array[theme="high-contrast"]::part(remove-button) { background: #ffffff; color: #000000; }
+
+    ck-primitive-array[theme="ocean"] {
+      --ck-primitive-array-background: #e0f2fe;
+      --ck-primitive-array-color: #075985;
+      --ck-primitive-array-box-shadow: 0 8px 24px rgba(2, 132, 199, 0.25);
+    }
+    ck-primitive-array[theme="ocean"]::part(input) { border-color: #38bdf8; }
+    ck-primitive-array[theme="ocean"]::part(delete-button) { background: #bae6fd; color: #075985; }
+    ck-primitive-array[theme="ocean"]::part(remove-button) { background: #0ea5e9; color: #ffffff; }
+
+    ck-primitive-array[theme="sunset"] {
+      --ck-primitive-array-background: #fff7ed;
+      --ck-primitive-array-color: #c2410c;
+      --ck-primitive-array-box-shadow: 0 10px 20px rgba(234, 88, 12, 0.2);
+    }
+    ck-primitive-array[theme="sunset"]::part(input) { border-color: #fb923c; }
+    ck-primitive-array[theme="sunset"]::part(delete-button) { background: #fed7aa; color: #c2410c; }
+    ck-primitive-array[theme="sunset"]::part(remove-button) { background: #ea580c; color: #fff7ed; }
+
+    ck-primitive-array[theme="forest"] {
+      --ck-primitive-array-background: #ecfdf5;
+      --ck-primitive-array-color: #065f46;
+      --ck-primitive-array-box-shadow: 0 8px 22px rgba(5, 150, 105, 0.22);
+    }
+    ck-primitive-array[theme="forest"]::part(input) { border-color: #34d399; }
+    ck-primitive-array[theme="forest"]::part(delete-button) { background: #bbf7d0; color: #065f46; }
+    ck-primitive-array[theme="forest"]::part(remove-button) { background: #16a34a; color: #ecfdf5; }
+
+    ck-primitive-array[theme="slate"] {
+      --ck-primitive-array-background: #f8fafc;
+      --ck-primitive-array-color: #334155;
+      --ck-primitive-array-box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+    }
+    ck-primitive-array[theme="slate"]::part(input) { border-color: #94a3b8; }
+    ck-primitive-array[theme="slate"]::part(delete-button) { background: #e2e8f0; color: #334155; }
+    ck-primitive-array[theme="slate"]::part(remove-button) { background: #475569; color: #f8fafc; }
+
+    ck-primitive-array[theme="solarized"] {
+      --ck-primitive-array-background: #fdf6e3;
+      --ck-primitive-array-color: #657b83;
+      --ck-primitive-array-box-shadow: 0 10px 22px rgba(88, 110, 117, 0.2);
+    }
+    ck-primitive-array[theme="solarized"]::part(input) { border-color: #b58900; }
+    ck-primitive-array[theme="solarized"]::part(delete-button) { background: #eee8d5; color: #586e75; }
+    ck-primitive-array[theme="solarized"]::part(remove-button) { background: #cb4b16; color: #fdf6e3; }
+
+    ck-primitive-array[theme="candy"] {
+      --ck-primitive-array-background: #fdf2f8;
+      --ck-primitive-array-color: #be185d;
+      --ck-primitive-array-box-shadow: 0 10px 24px rgba(219, 39, 119, 0.2);
+    }
+    ck-primitive-array[theme="candy"]::part(input) { border-color: #f472b6; }
+    ck-primitive-array[theme="candy"]::part(delete-button) { background: #fbcfe8; color: #9d174d; }
+    ck-primitive-array[theme="candy"]::part(remove-button) { background: #ec4899; color: #fdf2f8; }
+
+    ck-primitive-array[theme="monochrome"] {
+      --ck-primitive-array-background: #f9fafb;
+      --ck-primitive-array-color: #111827;
+      --ck-primitive-array-border-radius: 2px;
+      --ck-primitive-array-box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+    }
+    ck-primitive-array[theme="monochrome"]::part(input) { border-color: #111827; }
+    ck-primitive-array[theme="monochrome"]::part(delete-button) { background: #111827; color: #f9fafb; }
+    ck-primitive-array[theme="monochrome"]::part(remove-button) { background: #000000; color: #ffffff; }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Back to Documentation</a></nav>
+  <main>
+    <h1>Themes</h1>
+    <p>Theme examples powered by CSS custom properties and <code>theme</code> attributes.</p>
+
+    <section id="complete-themes">
+      <h2>Theme Gallery</h2>
+      <div class="theme-gallery">
+        <div class="theme-card" id="light-theme">
+          <h3>Light</h3>
+          <ck-primitive-array theme="light" name="Light" items='["Alpha", "Beta"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card" id="dark-theme">
+          <h3>Dark</h3>
+          <ck-primitive-array theme="dark" name="Dark" items='["Gamma", "Delta"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card" id="high-contrast-theme">
+          <h3>High Contrast</h3>
+          <ck-primitive-array theme="high-contrast" name="Contrast" items='["High", "Focus"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card">
+          <h3>Ocean</h3>
+          <ck-primitive-array theme="ocean" name="Ocean" items='["Wave", "Tide"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card">
+          <h3>Sunset</h3>
+          <ck-primitive-array theme="sunset" name="Sunset" items='["Glow", "Haze"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card">
+          <h3>Forest</h3>
+          <ck-primitive-array theme="forest" name="Forest" items='["Pine", "Cedar"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card">
+          <h3>Slate</h3>
+          <ck-primitive-array theme="slate" name="Slate" items='["Stone", "Cloud"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card">
+          <h3>Solarized</h3>
+          <ck-primitive-array theme="solarized" name="Solar" items='["Gold", "Sand"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card">
+          <h3>Candy</h3>
+          <ck-primitive-array theme="candy" name="Candy" items='["Pink", "Sugar"]'></ck-primitive-array>
+        </div>
+        <div class="theme-card">
+          <h3>Monochrome</h3>
+          <ck-primitive-array theme="monochrome" name="Mono" items='["Ink", "Paper"]'></ck-primitive-array>
+        </div>
+      </div>
+    </section>
+
+    <section id="theme-switching">
+      <h2>Theme Switching Demo</h2>
+      <div class="grid">
+        <div class="controls">
+          <div>
+            <label for="themeSelect">Select theme</label>
+            <select id="themeSelect">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+              <option value="high-contrast">High Contrast</option>
+              <option value="ocean">Ocean</option>
+              <option value="sunset">Sunset</option>
+              <option value="forest">Forest</option>
+              <option value="slate">Slate</option>
+              <option value="solarized">Solarized</option>
+              <option value="candy">Candy</option>
+              <option value="monochrome">Monochrome</option>
+            </select>
+          </div>
+          <div>
+            <label for="themeBackground">Background</label>
+            <input id="themeBackground" type="color" value="#ffffff" />
+          </div>
+          <div>
+            <label for="themeText">Text</label>
+            <input id="themeText" type="color" value="#111827" />
+          </div>
+          <div>
+            <label for="themeRadius">Border radius</label>
+            <input id="themeRadius" type="range" min="0" max="20" value="10" />
+          </div>
+          <button type="button" id="applyCustom">Apply custom overrides</button>
+          <button type="button" class="secondary" id="clearCustom">Clear overrides</button>
+        </div>
+        <div class="theme-card">
+          <h3>Live Theme Target</h3>
+          <ck-primitive-array
+            id="themeLive"
+            class="theme-transition theme-switch-target"
+            theme="light"
+            name="Live"
+            items='["Editable", "Preview"]'>
+          </ck-primitive-array>
+          <pre id="themeCode">ck-primitive-array[theme="light"] { ... }</pre>
+        </div>
+        <div class="theme-card">
+          <h3>Second Instance</h3>
+          <ck-primitive-array
+            id="themeMirror"
+            class="theme-transition theme-switch-target"
+            theme="light"
+            name="Mirror"
+            items='["Shared", "Theme"]'>
+          </ck-primitive-array>
+          <p class="note">Switching themes updates this instance too.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="system-theme">
+      <h2>System Theme Detection</h2>
+      <div class="grid">
+        <div class="theme-card">
+          <ck-primitive-array id="systemThemeDemo" class="theme-transition" name="System" items='["Auto", "Theme"]'></ck-primitive-array>
+          <p class="note" id="systemThemeLabel">System theme: detecting...</p>
+        </div>
+        <div class="theme-card">
+          <pre><code>const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+function applySystemTheme() {
+  const theme = prefersDark.matches ? 'dark' : 'light';
+  component.setAttribute('theme', theme);
+}
+applySystemTheme();
+prefersDark.addEventListener('change', applySystemTheme);</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="theme-transitions">
+      <h2>Theme Transitions</h2>
+      <div class="theme-card">
+        <ck-primitive-array id="transitionDemo" class="theme-transition" theme="light" name="Transition" items='["Smooth", "Shift"]'></ck-primitive-array>
+        <div class="controls" style="margin-top: 12px;">
+          <button type="button" id="transitionLight">Light</button>
+          <button type="button" id="transitionDark" class="secondary">Dark</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import '../../dist/ck-primitive-array/ck-primitive-array.esm.js';
+
+    const themeSelect = document.getElementById('themeSelect');
+    const themeLive = document.getElementById('themeLive');
+    const themeSwitchTargets = Array.from(document.querySelectorAll('.theme-switch-target'));
+    const themeBackground = document.getElementById('themeBackground');
+    const themeText = document.getElementById('themeText');
+    const themeRadius = document.getElementById('themeRadius');
+    const applyCustom = document.getElementById('applyCustom');
+    const clearCustom = document.getElementById('clearCustom');
+    const themeCode = document.getElementById('themeCode');
+
+    const updateThemeCode = () => {
+      if (!themeLive || !themeCode) return;
+      const theme = themeLive.getAttribute('theme') || 'light';
+      themeCode.textContent = `ck-primitive-array[theme="${theme}"] { /* custom CSS variables */ }`;
+    };
+
+    if (themeSelect) {
+      themeSelect.addEventListener('change', () => {
+        themeSwitchTargets.forEach((el) => el.setAttribute('theme', themeSelect.value));
+        updateThemeCode();
+      });
+    }
+
+    if (applyCustom && themeLive) {
+      applyCustom.addEventListener('click', () => {
+        themeLive.style.setProperty('--ck-primitive-array-background', themeBackground.value);
+        themeLive.style.setProperty('--ck-primitive-array-color', themeText.value);
+        themeLive.style.setProperty('--ck-primitive-array-border-radius', `${themeRadius.value}px`);
+      });
+    }
+
+    if (clearCustom && themeLive) {
+      clearCustom.addEventListener('click', () => {
+        themeLive.style.removeProperty('--ck-primitive-array-background');
+        themeLive.style.removeProperty('--ck-primitive-array-color');
+        themeLive.style.removeProperty('--ck-primitive-array-border-radius');
+      });
+    }
+
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const systemThemeDemo = document.getElementById('systemThemeDemo');
+    const systemThemeLabel = document.getElementById('systemThemeLabel');
+
+    const applySystemTheme = () => {
+      if (!systemThemeDemo || !systemThemeLabel) return;
+      const theme = prefersDark.matches ? 'dark' : 'light';
+      systemThemeDemo.setAttribute('theme', theme);
+      systemThemeLabel.textContent = `System theme: ${theme}`;
+    };
+
+    applySystemTheme();
+    prefersDark.addEventListener('change', applySystemTheme);
+
+    const transitionDemo = document.getElementById('transitionDemo');
+    const transitionLight = document.getElementById('transitionLight');
+    const transitionDark = document.getElementById('transitionDark');
+
+    if (transitionDemo && transitionLight && transitionDark) {
+      transitionLight.addEventListener('click', () => transitionDemo.setAttribute('theme', 'light'));
+      transitionDark.addEventListener('click', () => transitionDemo.setAttribute('theme', 'dark'));
+    }
+
+    updateThemeCode();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ck-primitive-array - Documentation</title>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      background: #f6f7f9;
+      color: #1a1a1a;
+    }
+    nav {
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 16px 24px;
+      z-index: 10;
+    }
+    nav a {
+      color: #e2e8f0;
+      text-decoration: none;
+      margin-right: 16px;
+      font-size: 14px;
+    }
+    nav a:hover {
+      color: #ffffff;
+    }
+    main {
+      max-width: 1100px;
+      margin: 24px auto 72px;
+      padding: 0 24px;
+    }
+    h1 {
+      font-size: 2.3rem;
+      margin-bottom: 8px;
+    }
+    h2 {
+      margin-top: 40px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+    h3 {
+      margin-top: 28px;
+    }
+    h4 {
+      margin-top: 18px;
+    }
+    section {
+      background: #ffffff;
+      padding: 20px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    code {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.9em;
+    }
+    pre {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 16px;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f1f5f9;
+      width: 220px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      color: #1e293b;
+      font-size: 12px;
+      margin-right: 6px;
+    }
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .toc a {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .toc a:hover {
+      background: #334155;
+    }
+    .callout {
+      border-left: 4px solid #2563eb;
+      background: #eff6ff;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 16px 0;
+    }
+    .warning {
+      border-left: 4px solid #dc2626;
+      background: #fef2f2;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 16px 0;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <strong>ck-primitive-array</strong>
+    <div class="toc">
+      <a href="#overview">Overview</a>
+      <a href="#installation">Installation</a>
+      <a href="#attributes">Attributes</a>
+      <a href="#css-properties">CSS Properties</a>
+      <a href="#css-parts">CSS Parts</a>
+      <a href="#themes">Themes</a>
+      <a href="#methods">Methods</a>
+      <a href="#events">Events</a>
+      <a href="#examples">Examples</a>
+      <a href="#faq">FAQ</a>
+    </div>
+  </nav>
+
+  <main>
+    <h1>ck-primitive-array</h1>
+    <p class="pill">Custom Element</p>
+    <p class="pill">Form Friendly</p>
+    <p class="pill">Vanilla TypeScript</p>
+
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>
+        <code>ck-primitive-array</code> provides an editable list of primitive values (strings, numbers, booleans)
+        with inline validation, soft delete, hard remove, and form submission support. It is designed for
+        quick list editing with keyboard accessibility and real-time feedback.
+      </p>
+      <ul>
+        <li>Edits are live; validation errors render immediately.</li>
+        <li>Soft delete toggles an item as deleted without removing it.</li>
+        <li>Hard remove permanently removes a row.</li>
+        <li>Hidden inputs enable native form submission.</li>
+      </ul>
+      <div class="callout">
+        <strong>Key Concept:</strong> All list values are stored as strings internally. The component filters
+        non-primitive values when using the <code>items</code> attribute.
+      </div>
+      <h3>Internal State Model</h3>
+      <ul>
+        <li><strong>items:</strong> Array of <code>{ id, value, deleted }</code> objects representing each row.</li>
+        <li><strong>deleted:</strong> Soft delete toggles this flag without removing the row.</li>
+        <li><strong>validation:</strong> Item-level errors (empty, minlength, maxlength, pattern, duplicates) and list-level errors (required, min, max).</li>
+        <li><strong>announcements:</strong> Actions and validation changes are announced via an aria-live region.</li>
+        <li><strong>readonly/disabled:</strong> Stored via attributes and reflected in UI state.</li>
+      </ul>
+    </section>
+
+    <section id="installation">
+      <h2>Installation</h2>
+      <h3>ES Modules (local dist)</h3>
+      <pre><code>&lt;script type="module"&gt;
+import "../dist/ck-primitive-array/ck-primitive-array.esm.js";
+&lt;/script&gt;</code></pre>
+      <h3>Bundler Import</h3>
+      <pre><code>import "ck-primitive-array"; // adjust to your build setup</code></pre>
+      <h3>Minimal Usage</h3>
+      <pre><code>&lt;ck-primitive-array&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="attributes">
+      <h2>Attributes</h2>
+
+      <h3><code>name</code></h3>
+      <table>
+        <tr><th>Property</th><td>name</td></tr>
+        <tr><th>Type</th><td>string</td></tr>
+        <tr><th>Default</th><td>"World"</td></tr>
+        <tr><th>Valid Values</th><td>Any non-empty string</td></tr>
+      </table>
+      <p><strong>Description:</strong> Sets the greeting header text ("Hello, {name}!") and also controls the
+        name of the hidden form inputs for active items. When set, active items are submitted as
+        <code>{name}[]</code>. If you omit <code>name</code>, the component does not contribute items to form submissions.</p>
+      <p><strong>Examples:</strong> <a href="examples/basic-usage.html#name-attribute-demo">Basic Usage</a>,
+        <a href="examples/form-integration.html#name-attribute">Form Integration</a></p>
+
+      <h3><code>color</code></h3>
+      <table>
+        <tr><th>Property</th><td>color</td></tr>
+        <tr><th>Type</th><td>string (CSS color)</td></tr>
+        <tr><th>Default</th><td>"#333"</td></tr>
+        <tr><th>Valid Values</th><td>Any valid CSS color value</td></tr>
+      </table>
+      <p><strong>Description:</strong> Sets the primary text color by updating the
+        <code>--ck-primitive-array-color</code> CSS custom property on the host. This affects the greeting text and
+        other element colors that reference the variable.</p>
+      <p><strong>Examples:</strong> <a href="examples/basic-usage.html#color-demo">Basic Usage</a>,
+        <a href="examples/styling.html#css-var-color">Styling</a></p>
+
+      <h3><code>items</code></h3>
+      <table>
+        <tr><th>Property</th><td>items</td></tr>
+        <tr><th>Type</th><td>string (JSON array) or property array</td></tr>
+        <tr><th>Default</th><td>[]</td></tr>
+        <tr><th>Valid Values</th><td>JSON array of strings, numbers, or booleans</td></tr>
+      </table>
+      <p><strong>Description:</strong> Supplies initial list values. The attribute must be valid JSON and must
+        represent an array. Non-primitive values (objects, arrays, null) are filtered out, and all values are
+        stored as strings. When setting the <code>items</code> property, you can pass primitives or objects with a
+        <code>value</code> field; the component normalizes them to strings. Updating this attribute replaces the entire list.</p>
+      <p><strong>Examples:</strong> <a href="examples/basic-usage.html#items-attribute-demo">Basic Usage</a>,
+        <a href="examples/edge-cases.html#items-filtering">Edge Cases</a></p>
+
+      <h3><code>readonly</code></h3>
+      <table>
+        <tr><th>Property</th><td>readonly</td></tr>
+        <tr><th>Type</th><td>boolean (attribute presence)</td></tr>
+        <tr><th>Default</th><td>false</td></tr>
+        <tr><th>Valid Values</th><td>Present or absent</td></tr>
+      </table>
+      <p><strong>Description:</strong> Prevents editing of item values and disables add/delete/remove controls.
+        Inputs remain focusable but cannot be changed. Use this for read-only review states.</p>
+      <p><strong>Examples:</strong> <a href="examples/basic-usage.html#readonly-demo">Basic Usage</a>,
+        <a href="examples/data-states.html#readonly-state">Data States</a></p>
+
+      <h3><code>disabled</code></h3>
+      <table>
+        <tr><th>Property</th><td>disabled</td></tr>
+        <tr><th>Type</th><td>boolean (attribute presence)</td></tr>
+        <tr><th>Default</th><td>false</td></tr>
+        <tr><th>Valid Values</th><td>Present or absent</td></tr>
+      </table>
+      <p><strong>Description:</strong> Disables all interactions and applies a visual disabled state. Inputs and
+        buttons are disabled and the component dims via a CSS class.</p>
+      <p><strong>Examples:</strong> <a href="examples/data-states.html#disabled-state">Data States</a></p>
+
+      <h3><code>deleted-name</code></h3>
+      <table>
+        <tr><th>Property</th><td>deleted-name</td></tr>
+        <tr><th>Type</th><td>string</td></tr>
+        <tr><th>Default</th><td>null</td></tr>
+        <tr><th>Valid Values</th><td>Any string</td></tr>
+      </table>
+      <p><strong>Description:</strong> Defines the form field name for soft-deleted items. When an item is toggled
+        deleted, its hidden input is renamed to <code>{deleted-name}[]</code>. If omitted, deleted items are removed
+        from form submission entirely.</p>
+      <p><strong>Examples:</strong> <a href="examples/form-integration.html#deleted-name-demo">Form Integration</a></p>
+
+      <h3><code>required</code></h3>
+      <table>
+        <tr><th>Property</th><td>required</td></tr>
+        <tr><th>Type</th><td>boolean (attribute presence)</td></tr>
+        <tr><th>Default</th><td>false</td></tr>
+        <tr><th>Valid Values</th><td>Present or absent</td></tr>
+      </table>
+      <p><strong>Description:</strong> Requires at least one active (non-deleted) item. When empty, the list shows a
+        validation message and <code>checkValidity()</code> returns <code>false</code>.</p>
+      <p><strong>Examples:</strong> <a href="examples/form-integration.html#required-demo">Form Integration</a></p>
+
+      <h3><code>min</code></h3>
+      <table>
+        <tr><th>Property</th><td>min</td></tr>
+        <tr><th>Type</th><td>number (integer)</td></tr>
+        <tr><th>Default</th><td>undefined</td></tr>
+        <tr><th>Valid Values</th><td>0 or greater</td></tr>
+      </table>
+      <p><strong>Description:</strong> Sets the minimum number of active items. The UI shows a list-level error when
+        there are some items but fewer than <code>min</code>. The <code>checkValidity()</code> method fails if the active
+        count is below <code>min</code>, including when the list is empty.</p>
+      <p><strong>Examples:</strong> <a href="examples/data-states.html#minmax-demo">Data States</a></p>
+
+      <h3><code>max</code></h3>
+      <table>
+        <tr><th>Property</th><td>max</td></tr>
+        <tr><th>Type</th><td>number (integer)</td></tr>
+        <tr><th>Default</th><td>undefined</td></tr>
+        <tr><th>Valid Values</th><td>1 or greater</td></tr>
+      </table>
+      <p><strong>Description:</strong> Sets the maximum number of active items. When the active count reaches
+        <code>max</code>, the Add button is disabled and a list-level error appears if exceeded.</p>
+      <p><strong>Examples:</strong> <a href="examples/data-states.html#minmax-demo">Data States</a></p>
+
+      <h3><code>minlength</code></h3>
+      <table>
+        <tr><th>Property</th><td>minlength</td></tr>
+        <tr><th>Type</th><td>number (integer)</td></tr>
+        <tr><th>Default</th><td>undefined</td></tr>
+        <tr><th>Valid Values</th><td>0 or greater</td></tr>
+      </table>
+      <p><strong>Description:</strong> Enforces a minimum character length for each item value. Errors render inline
+        beneath the item when the value is shorter than <code>minlength</code>.</p>
+      <p><strong>Examples:</strong> <a href="examples/advanced-usage.html#minlength-demo">Advanced Usage</a></p>
+
+      <h3><code>maxlength</code></h3>
+      <table>
+        <tr><th>Property</th><td>maxlength</td></tr>
+        <tr><th>Type</th><td>number (integer)</td></tr>
+        <tr><th>Default</th><td>undefined</td></tr>
+        <tr><th>Valid Values</th><td>1 or greater</td></tr>
+      </table>
+      <p><strong>Description:</strong> Enforces a maximum character length for each item value. Values longer than
+        <code>maxlength</code> show a validation error.</p>
+      <p><strong>Examples:</strong> <a href="examples/advanced-usage.html#maxlength-demo">Advanced Usage</a></p>
+
+      <h3><code>pattern</code></h3>
+      <table>
+        <tr><th>Property</th><td>pattern</td></tr>
+        <tr><th>Type</th><td>string (regex source)</td></tr>
+        <tr><th>Default</th><td>undefined</td></tr>
+        <tr><th>Valid Values</th><td>Valid regex source without delimiters</td></tr>
+      </table>
+      <p><strong>Description:</strong> Validates each item against a regular expression. The component wraps the
+        value in <code>^</code> and <code>$</code> to enforce full-string matches. Invalid patterns log an error and skip
+        pattern validation.</p>
+      <p><strong>Examples:</strong> <a href="examples/advanced-usage.html#pattern-demo">Advanced Usage</a>,
+        <a href="examples/edge-cases.html#pattern-edge">Edge Cases</a></p>
+
+      <h3><code>allow-duplicates</code></h3>
+      <table>
+        <tr><th>Property</th><td>allow-duplicates</td></tr>
+        <tr><th>Type</th><td>boolean (attribute presence)</td></tr>
+        <tr><th>Default</th><td>false</td></tr>
+        <tr><th>Valid Values</th><td>Present or absent</td></tr>
+      </table>
+      <p><strong>Description:</strong> Allows duplicate item values when present. By default, duplicate values cause
+        a validation error to appear on the edited item.</p>
+      <p><strong>Examples:</strong> <a href="examples/advanced-usage.html#allow-duplicates-demo">Advanced Usage</a></p>
+    </section>
+
+    <section id="css-properties">
+      <h2>CSS Custom Properties</h2>
+
+      <h3><code>--ck-primitive-array-background</code></h3>
+      <table>
+        <tr><th>Default</th><td>transparent</td></tr>
+        <tr><th>Valid Values</th><td>Any CSS background value</td></tr>
+      </table>
+      <p><strong>Description:</strong> Controls the main container background.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-background: #f8fafc;
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-background">Styling</a></p>
+
+      <h3><code>--ck-primitive-array-color</code></h3>
+      <table>
+        <tr><th>Default</th><td>inherit (but overridden by <code>color</code> attribute default "#333")</td></tr>
+        <tr><th>Valid Values</th><td>Any CSS color value</td></tr>
+      </table>
+      <p><strong>Description:</strong> Primary text color for the component and greeting message.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-color: #0f172a;
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-color">Styling</a></p>
+
+      <h3><code>--ck-primitive-array-padding</code></h3>
+      <table>
+        <tr><th>Default</th><td>0</td></tr>
+        <tr><th>Valid Values</th><td>Any CSS length</td></tr>
+      </table>
+      <p><strong>Description:</strong> Controls internal padding of the component container.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-padding: 16px;
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-padding">Styling</a></p>
+
+      <h3><code>--ck-primitive-array-border-radius</code></h3>
+      <table>
+        <tr><th>Default</th><td>0</td></tr>
+        <tr><th>Valid Values</th><td>Any CSS length</td></tr>
+      </table>
+      <p><strong>Description:</strong> Rounds the component container corners.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-border-radius: 12px;
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-border-radius">Styling</a></p>
+
+      <h3><code>--ck-primitive-array-box-shadow</code></h3>
+      <table>
+        <tr><th>Default</th><td>none</td></tr>
+        <tr><th>Valid Values</th><td>Any CSS box-shadow</td></tr>
+      </table>
+      <p><strong>Description:</strong> Adds depth to the component container.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-box-shadow">Styling</a></p>
+
+      <h3><code>--ck-primitive-array-text-align</code></h3>
+      <table>
+        <tr><th>Default</th><td>center</td></tr>
+        <tr><th>Valid Values</th><td>left | center | right | start | end</td></tr>
+      </table>
+      <p><strong>Description:</strong> Aligns the header text and subtitle content.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-text-align: left;
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-text-align">Styling</a></p>
+
+      <h3><code>--ck-primitive-array-message-font-size</code></h3>
+      <table>
+        <tr><th>Default</th><td>1.5rem</td></tr>
+        <tr><th>Valid Values</th><td>Any CSS font-size</td></tr>
+      </table>
+      <p><strong>Description:</strong> Controls the size of the greeting headline.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-message-font-size: 2rem;
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-message-font-size">Styling</a></p>
+
+      <h3><code>--ck-primitive-array-subtitle-font-size</code></h3>
+      <table>
+        <tr><th>Default</th><td>1rem</td></tr>
+        <tr><th>Valid Values</th><td>Any CSS font-size</td></tr>
+      </table>
+      <p><strong>Description:</strong> Controls the size of the subtitle text.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-subtitle-font-size: 0.9rem;
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-subtitle-font-size">Styling</a></p>
+
+      <h3><code>--ck-primitive-array-subtitle-opacity</code></h3>
+      <table>
+        <tr><th>Default</th><td>0.8</td></tr>
+        <tr><th>Valid Values</th><td>0 to 1</td></tr>
+      </table>
+      <p><strong>Description:</strong> Adjusts the opacity of the subtitle line.</p>
+      <pre><code>ck-primitive-array {
+  --ck-primitive-array-subtitle-opacity: 0.6;
+}</code></pre>
+      <p><strong>Visual Example:</strong> <a href="examples/styling.html#css-var-subtitle-opacity">Styling</a></p>
+    </section>
+
+    <section id="css-parts">
+      <h2>CSS Parts</h2>
+
+      <h3><code>::part(list)</code></h3>
+      <p><strong>Targets:</strong> The list container that wraps item rows.</p>
+      <p><strong>Description:</strong> Use this part to adjust layout spacing, borders, or background for the list.
+        It includes the placeholder element when there are no items.</p>
+      <p><strong>Common Use Cases:</strong></p>
+      <ul>
+        <li>Add a border around the list</li>
+        <li>Change spacing between rows</li>
+        <li>Provide a subtle background for the list area</li>
+      </ul>
+      <pre><code>ck-primitive-array::part(list) {
+  border: 1px dashed #cbd5f5;
+  padding: 8px;
+}</code></pre>
+      <p><strong>Example:</strong> <a href="examples/styling.html#part-list">Styling</a></p>
+
+      <h3><code>::part(row)</code></h3>
+      <p><strong>Targets:</strong> Each item row container.</p>
+      <p><strong>Description:</strong> Styles the row wrapper that includes the input and action buttons.</p>
+      <p><strong>Common Use Cases:</strong></p>
+      <ul>
+        <li>Align row background and spacing</li>
+        <li>Add separators between items</li>
+        <li>Highlight rows on hover</li>
+      </ul>
+      <pre><code>ck-primitive-array::part(row) {
+  border-bottom: 1px solid #e2e8f0;
+}</code></pre>
+      <p><strong>Example:</strong> <a href="examples/styling.html#part-row">Styling</a></p>
+
+      <h3><code>::part(deleted)</code></h3>
+      <p><strong>Targets:</strong> Rows marked as deleted (soft delete).</p>
+      <p><strong>Description:</strong> Use this part to visually differentiate deleted rows when the user toggles
+        delete/undo.</p>
+      <p><strong>Common Use Cases:</strong></p>
+      <ul>
+        <li>Reduce opacity or apply strike-through styling</li>
+        <li>Change background to indicate deletion</li>
+        <li>Animate deleted rows</li>
+      </ul>
+      <pre><code>ck-primitive-array::part(deleted) {
+  opacity: 0.55;
+  text-decoration: line-through;
+}</code></pre>
+      <p><strong>Example:</strong> <a href="examples/styling.html#part-deleted">Styling</a></p>
+
+      <h3><code>::part(input)</code></h3>
+      <p><strong>Targets:</strong> The text input for each item.</p>
+      <p><strong>Description:</strong> Customize field borders, padding, or typography.</p>
+      <p><strong>Common Use Cases:</strong></p>
+      <ul>
+        <li>Change border colors</li>
+        <li>Adjust font sizing</li>
+        <li>Add focus styles</li>
+      </ul>
+      <pre><code>ck-primitive-array::part(input) {
+  border-radius: 8px;
+}</code></pre>
+      <p><strong>Example:</strong> <a href="examples/styling.html#part-input">Styling</a></p>
+
+      <h3><code>::part(delete-button)</code></h3>
+      <p><strong>Targets:</strong> The soft delete / undo button.</p>
+      <p><strong>Description:</strong> Style the action that toggles deletion of a row.</p>
+      <p><strong>Common Use Cases:</strong></p>
+      <ul>
+        <li>Color the delete/undo action</li>
+        <li>Add iconography with background images</li>
+        <li>Adjust size for compact layouts</li>
+      </ul>
+      <pre><code>ck-primitive-array::part(delete-button) {
+  background: #fee2e2;
+  color: #7f1d1d;
+}</code></pre>
+      <p><strong>Example:</strong> <a href="examples/styling.html#part-delete-button">Styling</a></p>
+
+      <h3><code>::part(remove-button)</code></h3>
+      <p><strong>Targets:</strong> The hard remove button.</p>
+      <p><strong>Description:</strong> Styles the action that permanently removes a row.</p>
+      <p><strong>Common Use Cases:</strong></p>
+      <ul>
+        <li>Make the remove button more subtle</li>
+        <li>Use icon-only presentation</li>
+        <li>Match your danger button styling</li>
+      </ul>
+      <pre><code>ck-primitive-array::part(remove-button) {
+  background: #111827;
+  color: #f9fafb;
+}</code></pre>
+      <p><strong>Example:</strong> <a href="examples/styling.html#part-remove-button">Styling</a></p>
+    </section>
+
+    <section id="themes">
+      <h2>Themes</h2>
+      <h3>Overview</h3>
+      <p>
+        This component does not include built-in theme presets. Instead, you can define themes by setting
+        CSS custom properties on the host element. The examples provided in the theme gallery demonstrate
+        10 complete themes you can copy or customize.
+      </p>
+
+      <h3>Recommended Themes</h3>
+      <p>Light (default), Dark, High Contrast, Ocean, Sunset, Forest, Slate, Solarized, Candy, Monochrome.</p>
+
+      <h3>Theme Application</h3>
+      <pre><code>&lt;ck-primitive-array theme="dark"&gt;&lt;/ck-primitive-array&gt;
+
+ck-primitive-array[theme="dark"] {
+  --ck-primitive-array-background: #111827;
+  --ck-primitive-array-color: #f9fafb;
+}</code></pre>
+
+      <h3>Theme Variables Reference</h3>
+      <table>
+        <tr>
+          <th>Variable</th>
+          <th>Light</th>
+          <th>Dark</th>
+          <th>High Contrast</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td><code>--ck-primitive-array-background</code></td>
+          <td>#ffffff</td>
+          <td>#0f172a</td>
+          <td>#000000</td>
+          <td>Container background</td>
+        </tr>
+        <tr>
+          <td><code>--ck-primitive-array-color</code></td>
+          <td>#111827</td>
+          <td>#f8fafc</td>
+          <td>#ffffff</td>
+          <td>Primary text color</td>
+        </tr>
+        <tr>
+          <td><code>--ck-primitive-array-box-shadow</code></td>
+          <td>0 6px 18px rgba(15,23,42,0.12)</td>
+          <td>0 6px 18px rgba(15,23,42,0.5)</td>
+          <td>none</td>
+          <td>Container depth</td>
+        </tr>
+        <tr>
+          <td><code>--ck-primitive-array-border-radius</code></td>
+          <td>12px</td>
+          <td>12px</td>
+          <td>0</td>
+          <td>Corner rounding</td>
+        </tr>
+        <tr>
+          <td><code>--ck-primitive-array-message-font-size</code></td>
+          <td>1.6rem</td>
+          <td>1.6rem</td>
+          <td>1.6rem</td>
+          <td>Headline size</td>
+        </tr>
+        <tr>
+          <td><code>--ck-primitive-array-subtitle-opacity</code></td>
+          <td>0.75</td>
+          <td>0.85</td>
+          <td>1</td>
+          <td>Subtitle emphasis</td>
+        </tr>
+      </table>
+      <p>See the full theme gallery for all 10 theme values and previews.</p>
+
+      <h3>Creating Custom Themes</h3>
+      <h4>Method 1: CSS Classes</h4>
+      <pre><code>ck-primitive-array.ocean-theme {
+  --ck-primitive-array-background: #e0f2fe;
+  --ck-primitive-array-color: #075985;
+  --ck-primitive-array-box-shadow: 0 8px 20px rgba(2, 132, 199, 0.25);
+}
+
+&lt;ck-primitive-array class="ocean-theme"&gt;&lt;/ck-primitive-array&gt;</code></pre>
+
+      <h4>Method 2: Theme Attribute</h4>
+      <pre><code>ck-primitive-array[theme="forest"] {
+  --ck-primitive-array-background: #ecfdf5;
+  --ck-primitive-array-color: #065f46;
+}
+
+&lt;ck-primitive-array theme="forest"&gt;&lt;/ck-primitive-array&gt;</code></pre>
+
+      <h4>Method 3: Inline Styles</h4>
+      <pre><code>&lt;ck-primitive-array style="--ck-primitive-array-color:#0f172a; --ck-primitive-array-padding:16px;"&gt;&lt;/ck-primitive-array&gt;</code></pre>
+
+      <h3>Dynamic Theme Switching</h3>
+      <pre><code>const component = document.querySelector('ck-primitive-array');
+component.setAttribute('theme', 'dark');</code></pre>
+
+      <h3>System Theme Detection</h3>
+      <pre><code>const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+const updateTheme = () => {
+  const theme = prefersDark.matches ? 'dark' : 'light';
+  document.querySelectorAll('ck-primitive-array').forEach(el => {
+    el.setAttribute('theme', theme);
+  });
+};
+updateTheme();
+prefersDark.addEventListener('change', updateTheme);</code></pre>
+
+      <h3>Theme Examples</h3>
+      <ul>
+        <li><a href="examples/themes.html#complete-themes">Theme Gallery</a></li>
+        <li><a href="examples/themes.html#theme-switching">Theme Switching Demo</a></li>
+        <li><a href="examples/themes.html#system-theme">System Theme Integration</a></li>
+        <li><a href="examples/themes.html#theme-transitions">Theme Transitions</a></li>
+      </ul>
+    </section>
+
+    <section id="methods">
+      <h2>Methods</h2>
+
+      <h3><code>connectedCallback()</code></h3>
+      <h4>Parameters</h4>
+      <p>None.</p>
+      <h4>Return Value</h4>
+      <p><strong>Type:</strong> void</p>
+      <h4>Description</h4>
+      <p>Lifecycle hook invoked when the component is connected to the DOM. It initializes keyboard
+        handling, ensures hidden form inputs are mounted, and triggers the initial render. Avoid calling
+        this manually; the browser invokes it.</p>
+      <h4>Side Effects</h4>
+      <ul>
+        <li>Creates shadow DOM structure and event listeners.</li>
+        <li>Ensures the light DOM fields container exists.</li>
+        <li>Triggers render and validation.</li>
+      </ul>
+      <h4>Warnings</h4>
+      <ul>
+        <li>Do not call manually; relies on DOM lifecycle and internal state.</li>
+      </ul>
+      <h4>Internal State Changes</h4>
+      <ul>
+        <li>Initializes shadow DOM element references.</li>
+        <li>Creates the hidden fields container for form inputs.</li>
+        <li>Loads items from the <code>items</code> attribute.</li>
+      </ul>
+      <h4>Example</h4>
+      <pre><code>const el = document.createElement('ck-primitive-array');
+document.body.appendChild(el); // triggers connectedCallback()</code></pre>
+      <p><strong>Interactive Example:</strong> <a href="examples/basic-usage.html#intro">Basic Usage</a></p>
+
+      <h3><code>disconnectedCallback()</code></h3>
+      <h4>Parameters</h4>
+      <p>None.</p>
+      <h4>Return Value</h4>
+      <p><strong>Type:</strong> void</p>
+      <h4>Description</h4>
+      <p>Lifecycle hook invoked when the component is removed from the DOM. It cleans up event listeners
+        and removes internal DOM nodes to avoid leaks. The browser handles this automatically.</p>
+      <h4>Side Effects</h4>
+      <ul>
+        <li>Removes event listeners from shadow DOM and host.</li>
+        <li>Clears internal references and hidden inputs.</li>
+      </ul>
+      <h4>Warnings</h4>
+      <ul>
+        <li>Do not call manually; it resets internal references.</li>
+      </ul>
+      <h4>Internal State Changes</h4>
+      <ul>
+        <li>Clears references to shadow elements and listeners.</li>
+        <li>Removes hidden inputs from the light DOM.</li>
+      </ul>
+      <h4>Example</h4>
+      <pre><code>const el = document.querySelector('ck-primitive-array');
+el.remove(); // triggers disconnectedCallback()</code></pre>
+      <p><strong>Interactive Example:</strong> <a href="examples/basic-usage.html#intro">Basic Usage</a></p>
+
+      <h3><code>attributeChangedCallback(name, oldValue, newValue)</code></h3>
+      <h4>Parameters</h4>
+      <table>
+        <tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td>name</td><td>string</td><td>Yes</td><td>The attribute name that changed.</td></tr>
+        <tr><td>oldValue</td><td>string</td><td>Yes</td><td>Previous attribute value.</td></tr>
+        <tr><td>newValue</td><td>string</td><td>Yes</td><td>New attribute value.</td></tr>
+      </table>
+      <h4>Return Value</h4>
+      <p><strong>Type:</strong> void</p>
+      <h4>Description</h4>
+      <p>Invoked by the browser when any observed attribute changes. The component performs a render to
+        sync state with the new attribute value.</p>
+      <h4>Side Effects</h4>
+      <ul>
+        <li>Triggers a re-render.</li>
+        <li>May reset items when <code>items</code> changes.</li>
+      </ul>
+      <h4>Warnings</h4>
+      <ul>
+        <li>Do not call manually; use attribute setters instead.</li>
+      </ul>
+      <h4>Internal State Changes</h4>
+      <ul>
+        <li>Updates internal items when <code>items</code> changes.</li>
+        <li>Refreshes DOM and validation state.</li>
+      </ul>
+      <h4>Example</h4>
+      <pre><code>const el = document.querySelector('ck-primitive-array');
+el.setAttribute('items', '[\"updated\", \"values\"]');</code></pre>
+      <p><strong>Interactive Example:</strong> <a href="examples/advanced-usage.html#attribute-items-sync">Advanced Usage</a></p>
+
+      <h3><code>checkValidity()</code></h3>
+      <h4>Parameters</h4>
+      <p>None.</p>
+      <h4>Return Value</h4>
+      <p><strong>Type:</strong> boolean</p>
+      <p><strong>Description:</strong> Returns <code>true</code> if the list passes required, min, max, and non-empty checks.</p>
+      <h4>Description</h4>
+      <p>Use this method before submitting a form or persisting data to verify list-level constraints. It
+        checks required, min, max, and ensures each active item is not empty. It does not validate
+        minlength, maxlength, pattern, or duplicate rules, which are enforced live in the UI.</p>
+      <h4>Side Effects</h4>
+      <ul>
+        <li>No DOM mutations.</li>
+        <li>No events fired.</li>
+      </ul>
+      <h4>Warnings</h4>
+      <ul>
+        <li>Does not include all validation rules; inspect UI errors for full validation state.</li>
+      </ul>
+      <h4>Internal State Changes</h4>
+      <p>No internal state is mutated by <code>checkValidity()</code>.</p>
+      <h4>Example</h4>
+      <pre><code>const component = document.querySelector('ck-primitive-array');
+if (!component.checkValidity()) {
+  alert('Please fix list errors');
+}</code></pre>
+      <p><strong>Interactive Example:</strong> <a href="examples/form-integration.html#check-validity-demo">Form Integration</a></p>
+
+      <h3><code>addItem(value?)</code></h3>
+      <h4>Parameters</h4>
+      <table>
+        <tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td>value</td><td>string</td><td>No</td><td>Initial value for the new item.</td></tr>
+      </table>
+      <h4>Return Value</h4>
+      <p><strong>Type:</strong> void</p>
+      <h4>Description</h4>
+      <p>Appends a new item to the list, focuses the new input, and dispatches a <code>change</code> event. If
+        <code>readonly</code> or <code>disabled</code> is set, the method exits without making changes.</p>
+      <h4>Side Effects</h4>
+      <ul>
+        <li>Updates internal items state.</li>
+        <li>Adds a new row to the DOM without full re-render.</li>
+        <li>Updates hidden inputs for form submission.</li>
+        <li>Dispatches <code>change</code> event.</li>
+      </ul>
+      <h4>Warnings</h4>
+      <ul>
+        <li>Value is stored as a string; other types are coerced externally.</li>
+        <li>Will not add if <code>readonly</code> or <code>disabled</code> is present.</li>
+      </ul>
+      <h4>Internal State Changes</h4>
+      <p><strong>Before:</strong> <code>itemsState.length = N</code></p>
+      <p><strong>After:</strong> <code>itemsState.length = N + 1</code>, with a new item record appended.</p>
+      <h4>Example</h4>
+      <pre><code>const component = document.querySelector('ck-primitive-array');
+component.addItem('New value');</code></pre>
+      <p><strong>Interactive Example:</strong> <a href="examples/advanced-usage.html#method-additem-demo">Advanced Usage</a></p>
+    </section>
+
+    <section id="events">
+      <h2>Events</h2>
+
+      <h3><code>change</code></h3>
+      <h4>Payload Structure</h4>
+      <pre><code>{
+  detail: {
+    items: Array&lt;{ id: string; value: string; deleted: boolean }&gt;,
+    active?: string[],
+    deleted?: string[]
+  },
+  bubbles: true,
+  cancelable: false,
+  composed: false
+}</code></pre>
+      <h4>When Fired</h4>
+      <ul>
+        <li>User edits an item value.</li>
+        <li>New item is added (button or Enter key).</li>
+        <li>Item is soft-deleted or restored.</li>
+        <li>Item is hard removed.</li>
+        <li>Items attribute changes after initialization.</li>
+      </ul>
+      <p><strong>Note:</strong> The event always includes <code>detail.items</code>. The <code>active</code> and <code>deleted</code> arrays are
+        included when a soft delete/undo or hard remove occurs, but are not included for add/edit events.</p>
+      <h4>Event Properties</h4>
+      <table>
+        <tr><th>Bubbles</th><td>Yes</td></tr>
+        <tr><th>Cancelable</th><td>No</td></tr>
+        <tr><th>Composed</th><td>No</td></tr>
+      </table>
+      <h4>Typical Handler Example</h4>
+      <pre><code>const component = document.querySelector('ck-primitive-array');
+component.addEventListener('change', (event) => {
+  const { items, active, deleted } = event.detail;
+  console.log('Items:', items);
+  if (active) console.log('Active values:', active);
+  if (deleted) console.log('Deleted values:', deleted);
+});</code></pre>
+      <h4>Best Practices</h4>
+      <ul>
+        <li>Always check for <code>active</code>/<code>deleted</code> before using them.</li>
+        <li>Use <code>items</code> as the source of truth for persisted state.</li>
+        <li>Debounce high-frequency edits if syncing to a server.</li>
+      </ul>
+      <p><strong>Interactive Example:</strong> <a href="examples/internal-state.html#event-log">Internal State</a></p>
+    </section>
+
+    <section id="examples">
+      <h2>Examples</h2>
+      <h3>Basic Usage</h3>
+      <ul>
+        <li><a href="examples/basic-usage.html">Getting Started</a> - Minimal setup and primary attributes</li>
+      </ul>
+
+      <h3>Advanced Usage</h3>
+      <ul>
+        <li><a href="examples/advanced-usage.html">Advanced Patterns</a> - Validation, programmatic updates, and methods</li>
+      </ul>
+
+      <h3>Integration Patterns</h3>
+      <ul>
+        <li><a href="examples/form-integration.html">Form Integration</a> - Hidden inputs, validation, submit handling</li>
+      </ul>
+
+      <h3>Edge Cases & States</h3>
+      <ul>
+        <li><a href="examples/data-states.html">Data States</a> - Empty, loading, error, success, disabled, readonly</li>
+        <li><a href="examples/edge-cases.html">Edge Cases</a> - Invalid JSON, duplicates, patterns</li>
+      </ul>
+
+      <h3>Styling & Themes</h3>
+      <ul>
+        <li><a href="examples/styling.html">Component Styling</a> - CSS custom properties and parts</li>
+        <li><a href="examples/themes.html">Themes Gallery</a> - 10 complete theme demos and switcher</li>
+      </ul>
+
+      <h3>Internal State & Debugging</h3>
+      <ul>
+        <li><a href="examples/internal-state.html">State Inspector</a> - Observe internal state, events, and validation</li>
+      </ul>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ & Troubleshooting</h2>
+
+      <h3>Common Issues</h3>
+
+      <h4>Why isn't my <code>items</code> attribute showing values?</h4>
+      <p><strong>Problem:</strong> The list appears empty even though you set <code>items</code>.</p>
+      <p><strong>Solution:</strong> The attribute must be valid JSON and must be an array. Strings like
+        <code>items="apple,banana"</code> are invalid. Use <code>items='["apple","banana"]'</code> instead.</p>
+
+      <h4>Why are some values missing?</h4>
+      <p><strong>Problem:</strong> Objects, arrays, or <code>null</code> values disappear from the list.</p>
+      <p><strong>Solution:</strong> Only primitive values (string, number, boolean) are allowed. Non-primitives are
+        filtered out during parsing.</p>
+
+      <h4>Why are my duplicates being rejected?</h4>
+      <p><strong>Problem:</strong> Editing a value to match another shows an error.</p>
+      <p><strong>Solution:</strong> Add the <code>allow-duplicates</code> attribute if duplicates should be permitted.</p>
+
+      <h4>Why does <code>checkValidity()</code> return true while an error is visible?</h4>
+      <p><strong>Problem:</strong> UI shows minlength/pattern errors but <code>checkValidity()</code> returns <code>true</code>.</p>
+      <p><strong>Solution:</strong> <code>checkValidity()</code> only checks required/min/max and empty values. Inspect
+        UI errors for minlength/maxlength/pattern/duplicates or add your own validation.</p>
+
+      <h4>Why are deleted items not submitted?</h4>
+      <p><strong>Problem:</strong> Soft-deleted items disappear from form submissions.</p>
+      <p><strong>Solution:</strong> Provide a <code>deleted-name</code> attribute to include deleted items in a separate
+        field, for example <code>deleted-name="removed"</code>.</p>
+
+      <h3>Browser Compatibility</h3>
+      <p>The component relies on Custom Elements, Shadow DOM, and optional constructable stylesheets. Modern
+        Chromium, Firefox, and Safari support these APIs. If constructable stylesheets are not supported,
+        the component falls back to a shadow <code>&lt;style&gt;</code> tag automatically.</p>
+
+      <h3>Performance Tips</h3>
+      <ul>
+        <li>Batch updates via the <code>items</code> property rather than setting attributes repeatedly.</li>
+        <li>Debounce external listeners for rapid typing updates.</li>
+        <li>Prefer soft delete for reversible edits to avoid churn.</li>
+      </ul>
+
+      <h3>Accessibility</h3>
+      <p><strong>Keyboard Navigation:</strong> Tab/Shift+Tab cycles through inputs and buttons inside the component.
+        Enter on an input adds a row. Esc returns focus to the Add button. Buttons respond to Enter/Space.</p>
+      <p><strong>ARIA Support:</strong> Inputs and action buttons receive descriptive <code>aria-label</code> values, and
+        the list uses <code>role="list"</code>. Validation errors use <code>aria-invalid</code> and <code>aria-describedby</code>.</p>
+      <p><strong>Screen Readers:</strong> Actions and validation errors are announced via an <code>aria-live</code> region.</p>
+
+      <h3>Migration</h3>
+      <p>If you are migrating from a plain <code>&lt;input&gt;</code> list, map each item to a primitive string. Use the
+        <code>items</code> property to set initial values and listen for <code>change</code> events to keep data in sync.</p>
+
+      <h3>Theming Questions</h3>
+
+      <h4>My theme attribute doesn't do anything</h4>
+      <p><strong>Problem:</strong> Setting <code>theme="dark"</code> doesn't change visuals.</p>
+      <p><strong>Solution:</strong> The component does not include built-in themes. You must define CSS rules for the
+        theme attribute, e.g. <code>ck-primitive-array[theme="dark"] { ... }</code>.</p>
+
+      <h4>CSS variables are not applying</h4>
+      <p><strong>Solution:</strong> Ensure you set variables on the host element itself or a parent that contains it.
+        Avoid overly specific selectors that might be overridden.</p>
+
+      <h4>Can I use different themes for different instances?</h4>
+      <p><strong>Answer:</strong> Yes. Apply different theme attributes or classes per instance.</p>
+
+      <h4>Do themes affect performance?</h4>
+      <p><strong>Answer:</strong> CSS custom properties are efficient. Avoid changing themes on hundreds of instances
+        in a tight loop; batch updates or use requestAnimationFrame.</p>
+
+      <h3>Validation & Error Handling</h3>
+      <h4>How do I check if the component is valid?</h4>
+      <p>Call <code>checkValidity()</code> or check for visible errors. Keep in mind it does not include all
+        per-item constraints.</p>
+
+      <h4>How do I clear validation errors?</h4>
+      <p>Edit the value to satisfy the constraint. Errors clear immediately after the value becomes valid.</p>
+
+      <h4>When does validation occur?</h4>
+      <p>Validation runs on initial render and on every input change. List-level constraints update after
+        add/delete/remove actions.</p>
+
+      <h3>Internal State Inspection</h3>
+      <h4>How do I inspect component state?</h4>
+      <p>Use the <code>items</code> property for current data and query the shadow DOM for error states, or use the
+        internal state inspector example.</p>
+
+      <h4>How do I detect deleted items?</h4>
+      <p>Deleted items remain in the <code>items</code> array with <code>deleted: true</code>. The change event includes
+        optional <code>deleted</code> values when a delete/undo action occurs.</p>
+
+      <h4>Is there a loading state?</h4>
+      <p>No built-in loading flag. Use external state to disable the component or display overlays.</p>
+    </section>
+  </main>
+</body>
+</html>

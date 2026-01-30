@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Form Integration - ck-primitive-array</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    nav {
+      padding: 16px 24px;
+      background: #0f172a;
+    }
+    nav a { color: #e2e8f0; text-decoration: none; }
+    main {
+      max-width: 1100px;
+      margin: 24px auto 64px;
+      padding: 0 24px;
+    }
+    section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .output {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      min-height: 80px;
+    }
+    button {
+      background: #0f172a;
+      color: #f8fafc;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+    code {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.9em;
+    }
+    pre {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .note { font-size: 0.9rem; color: #475569; }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Back to Documentation</a></nav>
+  <main>
+    <h1>Form Integration</h1>
+    <p>Hidden inputs, form submission, and validation behavior.</p>
+
+    <section id="name-attribute">
+      <h2>name Attribute and Hidden Inputs</h2>
+      <div class="grid">
+        <div class="card">
+          <form id="nameForm">
+            <ck-primitive-array name="tags" items='["alpha", "beta"]'></ck-primitive-array>
+            <button type="submit" style="margin-top:12px;">Submit</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>FormData output</h3>
+          <div class="output" id="nameFormOutput">Submit to see form data.</div>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array name="tags" items='["alpha", "beta"]'&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="deleted-name-demo">
+      <h2>deleted-name for Soft Deletes</h2>
+      <div class="grid">
+        <div class="card">
+          <form id="deletedForm">
+            <ck-primitive-array
+              id="deletedArray"
+              name="active"
+              deleted-name="removed"
+              items='["keep", "delete me"]'>
+            </ck-primitive-array>
+            <button type="submit" style="margin-top:12px;">Submit</button>
+          </form>
+          <p class="note">Click Delete on the second item, then submit.</p>
+        </div>
+        <div class="card">
+          <h3>FormData output</h3>
+          <div class="output" id="deletedFormOutput">Submit to see form data.</div>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array name="active" deleted-name="removed"&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="required-demo">
+      <h2>required and List Constraints</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="requiredArray" name="requiredItems" required items='[]'></ck-primitive-array>
+          <p class="note">Add at least one item to satisfy required.</p>
+        </div>
+        <div class="card">
+          <ck-primitive-array id="minMaxArray" name="limited" min="2" max="4" items='["one"]'></ck-primitive-array>
+          <p class="note">Add until 2 items to satisfy min. Add stops at 4.</p>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array required min="2" max="4"&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="validation-state-tracker">
+      <h2>Validation State Tracker (Pristine / Touched / Valid / Invalid)</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="stateTrackerArray" name="stateTracker" required minlength="3" items='[""]'></ck-primitive-array>
+          <p class="note">Focus, type, and blur the input to see state changes.</p>
+        </div>
+        <div class="card">
+          <h3>State Output</h3>
+          <div class="output" id="stateTrackerOutput">Loading...</div>
+        </div>
+      </div>
+      <pre><code>// Example external state tracking
+let touched = false;
+let dirty = false;
+const update = () => { /* update UI */ };</code></pre>
+    </section>
+
+    <section id="check-validity-demo">
+      <h2>checkValidity() Before Submission</h2>
+      <div class="grid">
+        <div class="card">
+          <form id="validationForm">
+            <ck-primitive-array id="validationArray" name="tasks" required items='[]'></ck-primitive-array>
+            <button type="submit" style="margin-top:12px;">Submit (pre-check)</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>Status</h3>
+          <div class="output" id="validationOutput">Submit to see validation status.</div>
+        </div>
+      </div>
+      <pre><code>form.addEventListener('submit', (event) =&gt; {
+  if (!component.checkValidity()) event.preventDefault();
+});</code></pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import '../../dist/ck-primitive-array/ck-primitive-array.esm.js';
+
+    const showFormData = (form, outputEl) => {
+      if (!form || !outputEl) return;
+      const data = new FormData(form);
+      const lines = [];
+      for (const [key, value] of data.entries()) {
+        lines.push(`${key}: ${value}`);
+      }
+      outputEl.textContent = lines.length ? lines.join('\n') : '(no values)';
+    };
+
+    const nameForm = document.getElementById('nameForm');
+    const nameFormOutput = document.getElementById('nameFormOutput');
+    if (nameForm) {
+      nameForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        showFormData(nameForm, nameFormOutput);
+      });
+    }
+
+    const deletedForm = document.getElementById('deletedForm');
+    const deletedFormOutput = document.getElementById('deletedFormOutput');
+    if (deletedForm) {
+      deletedForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        showFormData(deletedForm, deletedFormOutput);
+      });
+    }
+
+    const validationForm = document.getElementById('validationForm');
+    const validationArray = document.getElementById('validationArray');
+    const validationOutput = document.getElementById('validationOutput');
+
+    if (validationForm && validationArray && validationOutput) {
+      validationForm.addEventListener('submit', (event) => {
+        if (!validationArray.checkValidity()) {
+          event.preventDefault();
+          validationOutput.textContent = 'checkValidity() failed. Add at least one item.';
+          return;
+        }
+        event.preventDefault();
+        validationOutput.textContent = 'checkValidity() passed. Form ready to submit.';
+      });
+    }
+
+    const stateTrackerArray = document.getElementById('stateTrackerArray');
+    const stateTrackerOutput = document.getElementById('stateTrackerOutput');
+    let trackerTouched = false;
+    let trackerDirty = false;
+
+    const updateTracker = () => {
+      if (!stateTrackerArray || !stateTrackerOutput) return;
+      const itemErrors = stateTrackerArray.shadowRoot?.querySelectorAll('[data-error]') || [];
+      const listErrors = stateTrackerArray.shadowRoot?.querySelectorAll('.ck-primitive-array__list-error') || [];
+      const valid = stateTrackerArray.checkValidity() && itemErrors.length === 0 && listErrors.length === 0;
+      const lines = [
+        `pristine: ${(!trackerDirty).toString()}`,
+        `touched: ${trackerTouched.toString()}`,
+        `valid: ${valid.toString()}`,
+        `invalid: ${(!valid).toString()}`,
+      ];
+      stateTrackerOutput.textContent = lines.join('\n');
+    };
+
+    if (stateTrackerArray) {
+      stateTrackerArray.addEventListener('change', () => {
+        trackerDirty = true;
+        updateTracker();
+      });
+      stateTrackerArray.shadowRoot?.addEventListener('focusin', () => {
+        trackerTouched = true;
+        updateTracker();
+      });
+      stateTrackerArray.shadowRoot?.addEventListener('input', updateTracker);
+    }
+
+    updateTracker();
+  </script>
+</body>
+</html>

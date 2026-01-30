@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Usage - ck-primitive-array</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    nav {
+      padding: 16px 24px;
+      background: #0f172a;
+    }
+    nav a { color: #e2e8f0; text-decoration: none; }
+    main {
+      max-width: 1100px;
+      margin: 24px auto 64px;
+      padding: 0 24px;
+    }
+    section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    label { display: block; margin-bottom: 6px; font-weight: 600; }
+    input, select, button {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #cbd5f5;
+      font-size: 0.95rem;
+    }
+    button { background: #0f172a; color: #f8fafc; cursor: pointer; border: none; }
+    button.secondary { background: #e2e8f0; color: #0f172a; }
+    code {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.9em;
+    }
+    pre {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .note { font-size: 0.9rem; color: #475569; }
+    .row { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Back to Documentation</a></nav>
+  <main>
+    <h1>Advanced Usage</h1>
+    <p>Programmatic control, validation constraints, and API usage.</p>
+
+    <section id="programmatic-items-demo">
+      <h2>Programmatic items Property</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="itemsPropertyDemo" name="Dynamic" items='["alpha", "beta"]'></ck-primitive-array>
+          <div class="row" style="margin-top: 12px;">
+            <div>
+              <label for="newItemInput">New item</label>
+              <input id="newItemInput" type="text" placeholder="Type and press Add" />
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button id="addItemButton" type="button">Add via items property</button>
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button id="resetItemsButton" class="secondary" type="button">Reset items</button>
+            </div>
+          </div>
+          <p class="note" id="itemsPropertyLog">items: alpha, beta</p>
+        </div>
+      </div>
+      <pre><code>const el = document.querySelector('#itemsPropertyDemo');
+el.items = ['alpha', 'beta', 'gamma'];</code></pre>
+    </section>
+
+    <section id="minlength-demo">
+      <h2>minlength Validation</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array minlength="4" name="Min Length" items='["a", "abcd"]'></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array minlength="4" items='["a", "abcd"]'&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="maxlength-demo">
+      <h2>maxlength Validation</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array maxlength="6" name="Max Length" items='["short", "too-long-value"]'></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array maxlength="6" items='["short", "too-long-value"]'&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="pattern-demo">
+      <h2>pattern Validation</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array
+            pattern="[a-z]+"
+            name="Lowercase Only"
+            items='["valid", "Invalid"]'>
+          </ck-primitive-array>
+          <p class="note">Pattern is wrapped with ^ and $ for full matches.</p>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array pattern="[a-z]+" items='["valid", "Invalid"]'&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="allow-duplicates-demo">
+      <h2>allow-duplicates</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="No Duplicates" items='["one", "two"]'></ck-primitive-array>
+          <p class="note">Try editing a value to match the other. Error appears.</p>
+        </div>
+        <div class="card">
+          <ck-primitive-array allow-duplicates name="Duplicates OK" items='["one", "one"]'></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array allow-duplicates items='["one", "one"]'&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="method-additem-demo">
+      <h2>addItem() Method</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="methodAddDemo" name="API List" items='["first"]'></ck-primitive-array>
+          <div class="row" style="margin-top: 12px;">
+            <div>
+              <label for="methodAddValue">Value</label>
+              <input id="methodAddValue" type="text" placeholder="New value" />
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <button id="methodAddButton" type="button">Call addItem()</button>
+            </div>
+          </div>
+          <p class="note" id="methodAddLog">items: first</p>
+        </div>
+      </div>
+      <pre><code>const component = document.querySelector('#methodAddDemo');
+component.addItem('New value');</code></pre>
+    </section>
+
+    <section id="attribute-items-sync">
+      <h2>Attribute Updates Replace the List</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="attributeSyncDemo" name="Attribute Sync" items='["draft", "todo"]'></ck-primitive-array>
+          <div class="row" style="margin-top: 12px;">
+            <div>
+              <label>&nbsp;</label>
+              <button id="attributeSyncButton" type="button">Replace items attribute</button>
+            </div>
+          </div>
+          <p class="note" id="attributeSyncLog">items: draft, todo</p>
+        </div>
+      </div>
+      <pre><code>component.setAttribute('items', '["replaced", "fresh"]');</code></pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import '../../dist/ck-primitive-array/ck-primitive-array.esm.js';
+
+    const itemsPropertyDemo = document.getElementById('itemsPropertyDemo');
+    const newItemInput = document.getElementById('newItemInput');
+    const addItemButton = document.getElementById('addItemButton');
+    const resetItemsButton = document.getElementById('resetItemsButton');
+    const itemsPropertyLog = document.getElementById('itemsPropertyLog');
+
+    const renderItemsLog = (el, log) => {
+      if (!el || !log) return;
+      const values = (el.items || []).map((item) => item.value).join(', ') || '(empty)';
+      log.textContent = `items: ${values}`;
+    };
+
+    if (itemsPropertyDemo && addItemButton && newItemInput) {
+      addItemButton.addEventListener('click', () => {
+        const value = newItemInput.value.trim();
+        if (!value) return;
+        const current = itemsPropertyDemo.items || [];
+        const next = current.map((item) => item.value).concat(value);
+        itemsPropertyDemo.items = next;
+        newItemInput.value = '';
+        renderItemsLog(itemsPropertyDemo, itemsPropertyLog);
+      });
+      resetItemsButton.addEventListener('click', () => {
+        itemsPropertyDemo.items = ['alpha', 'beta'];
+        renderItemsLog(itemsPropertyDemo, itemsPropertyLog);
+      });
+    }
+
+    const methodAddDemo = document.getElementById('methodAddDemo');
+    const methodAddValue = document.getElementById('methodAddValue');
+    const methodAddButton = document.getElementById('methodAddButton');
+    const methodAddLog = document.getElementById('methodAddLog');
+
+    if (methodAddDemo && methodAddButton) {
+      methodAddButton.addEventListener('click', () => {
+        const value = methodAddValue.value.trim() || 'Untitled';
+        methodAddDemo.addItem(value);
+        methodAddValue.value = '';
+        renderItemsLog(methodAddDemo, methodAddLog);
+      });
+      methodAddDemo.addEventListener('change', () => renderItemsLog(methodAddDemo, methodAddLog));
+    }
+
+    const attributeSyncDemo = document.getElementById('attributeSyncDemo');
+    const attributeSyncButton = document.getElementById('attributeSyncButton');
+    const attributeSyncLog = document.getElementById('attributeSyncLog');
+
+    if (attributeSyncDemo && attributeSyncButton) {
+      attributeSyncButton.addEventListener('click', () => {
+        attributeSyncDemo.setAttribute('items', '["replaced", "fresh", "ready"]');
+        renderItemsLog(attributeSyncDemo, attributeSyncLog);
+      });
+      attributeSyncDemo.addEventListener('change', () => renderItemsLog(attributeSyncDemo, attributeSyncLog));
+    }
+
+    renderItemsLog(itemsPropertyDemo, itemsPropertyLog);
+    renderItemsLog(methodAddDemo, methodAddLog);
+    renderItemsLog(attributeSyncDemo, attributeSyncLog);
+  </script>
+</body>
+</html>

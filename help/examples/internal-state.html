@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Internal State - ck-primitive-array</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    nav { padding: 16px 24px; background: #0f172a; }
+    nav a { color: #e2e8f0; text-decoration: none; }
+    main { max-width: 1200px; margin: 24px auto 64px; padding: 0 24px; }
+    section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .panel {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      min-height: 120px;
+      white-space: pre-wrap;
+    }
+    .controls {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      margin-top: 12px;
+    }
+    button {
+      background: #0f172a;
+      color: #f8fafc;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    button.secondary { background: #e2e8f0; color: #0f172a; }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Back to Documentation</a></nav>
+  <main>
+    <h1>Internal State & Debugging</h1>
+
+    <section id="state-inspector">
+      <h2>State Inspector</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="stateArray" name="Inspector" minlength="3" items='["one", "two"]'></ck-primitive-array>
+          <div class="controls">
+            <button type="button" id="addStateItem">Add item</button>
+            <button type="button" id="toggleReadonly" class="secondary">Toggle readonly</button>
+            <button type="button" id="toggleDisabled" class="secondary">Toggle disabled</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="panel" id="statePanel">Loading...</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="event-log">
+      <h2>Event Log</h2>
+      <div class="grid">
+        <div class="card">
+          <p>Every change event is logged with payload details.</p>
+          <div class="panel" id="eventPanel">(no events yet)</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="validation-states">
+      <h2>Validation States</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="validationArray" name="Validate" required minlength="4" items='[""]'></ck-primitive-array>
+          <p>Errors appear as you type. Empty and short values trigger errors.</p>
+        </div>
+        <div class="card">
+          <div class="panel" id="validationPanel">Loading...</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="hidden-inputs">
+      <h2>Hidden Inputs (Form Participation)</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="hiddenArray" name="hidden" deleted-name="removed" items='["keep", "delete"]'></ck-primitive-array>
+          <p>Soft delete an item to move it into the deleted-name field.</p>
+        </div>
+        <div class="card">
+          <div class="panel" id="hiddenPanel">Loading...</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="aria-live">
+      <h2>ARIA Live Announcements</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="liveArray" name="Live" items='["alpha"]'></ck-primitive-array>
+          <p>Actions announce updates via aria-live. Try adding or deleting items.</p>
+        </div>
+        <div class="card">
+          <div class="panel" id="livePanel">Loading...</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import '../../dist/ck-primitive-array/ck-primitive-array.esm.js';
+
+    const stateArray = document.getElementById('stateArray');
+    const statePanel = document.getElementById('statePanel');
+    const eventPanel = document.getElementById('eventPanel');
+    const addStateItem = document.getElementById('addStateItem');
+    const toggleReadonly = document.getElementById('toggleReadonly');
+    const toggleDisabled = document.getElementById('toggleDisabled');
+
+    const renderStatePanel = () => {
+      if (!stateArray || !statePanel) return;
+      const items = stateArray.items || [];
+      const values = items.map((item) => `${item.value}${item.deleted ? ' (deleted)' : ''}`);
+      const errors = stateArray.shadowRoot?.querySelectorAll('.has-error').length || 0;
+      statePanel.textContent = [
+        `items: ${values.join(', ') || '(empty)'}`,
+        `total: ${items.length}`,
+        `deleted: ${items.filter((item) => item.deleted).length}`,
+        `errors (dom): ${errors}`,
+        `readonly: ${stateArray.hasAttribute('readonly')}`,
+        `disabled: ${stateArray.hasAttribute('disabled')}`,
+      ].join('\n');
+    };
+
+    if (stateArray) {
+      stateArray.addEventListener('change', (event) => {
+        renderStatePanel();
+        const detail = event.detail || {};
+        const lines = [
+          `items: ${detail.items?.length ?? 0}`,
+          `active: ${detail.active ? detail.active.join(', ') : '(not provided)'}`,
+          `deleted: ${detail.deleted ? detail.deleted.join(', ') : '(not provided)'}`,
+        ];
+        eventPanel.textContent = `[${new Date().toLocaleTimeString()}] ${lines.join(' | ')}`;
+      });
+    }
+
+    if (addStateItem && stateArray) {
+      addStateItem.addEventListener('click', () => stateArray.addItem('new item'));
+    }
+    if (toggleReadonly && stateArray) {
+      toggleReadonly.addEventListener('click', () => {
+        if (stateArray.hasAttribute('readonly')) {
+          stateArray.removeAttribute('readonly');
+        } else {
+          stateArray.setAttribute('readonly', '');
+        }
+        renderStatePanel();
+      });
+    }
+    if (toggleDisabled && stateArray) {
+      toggleDisabled.addEventListener('click', () => {
+        if (stateArray.hasAttribute('disabled')) {
+          stateArray.removeAttribute('disabled');
+        } else {
+          stateArray.setAttribute('disabled', '');
+        }
+        renderStatePanel();
+      });
+    }
+
+    const validationArray = document.getElementById('validationArray');
+    const validationPanel = document.getElementById('validationPanel');
+    const renderValidation = () => {
+      if (!validationArray || !validationPanel) return;
+      const errors = validationArray.shadowRoot?.querySelectorAll('[data-error]') || [];
+      const listErrors = validationArray.shadowRoot?.querySelectorAll('.ck-primitive-array__list-error') || [];
+      validationPanel.textContent = [
+        `item errors: ${errors.length}`,
+        `list errors: ${listErrors.length}`,
+        `checkValidity(): ${validationArray.checkValidity()}`,
+      ].join('\n');
+    };
+
+    validationArray?.addEventListener('change', renderValidation);
+    validationArray?.shadowRoot?.addEventListener('input', renderValidation);
+
+    const hiddenArray = document.getElementById('hiddenArray');
+    const hiddenPanel = document.getElementById('hiddenPanel');
+    const renderHiddenInputs = () => {
+      if (!hiddenArray || !hiddenPanel) return;
+      const container = hiddenArray.querySelector('[data-ckpa-fields]');
+      const inputs = container ? Array.from(container.querySelectorAll('input')) : [];
+      const lines = inputs.map((input) => `${input.name}: ${input.value}`);
+      hiddenPanel.textContent = lines.length ? lines.join('\n') : '(no hidden inputs)';
+    };
+
+    hiddenArray?.addEventListener('change', renderHiddenInputs);
+
+    const liveArray = document.getElementById('liveArray');
+    const livePanel = document.getElementById('livePanel');
+    const renderLive = () => {
+      if (!liveArray || !livePanel) return;
+      const liveRegion = liveArray.shadowRoot?.querySelector('[aria-live]');
+      livePanel.textContent = liveRegion?.textContent?.trim() || '(no announcements yet)';
+    };
+
+    liveArray?.addEventListener('change', renderLive);
+    liveArray?.shadowRoot?.addEventListener('input', renderLive);
+
+    renderStatePanel();
+    renderValidation();
+    renderHiddenInputs();
+    renderLive();
+  </script>
+</body>
+</html>

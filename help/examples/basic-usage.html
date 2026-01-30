@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Basic Usage - ck-primitive-array</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+      margin: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    nav {
+      padding: 16px 24px;
+      background: #0f172a;
+    }
+    nav a { color: #e2e8f0; text-decoration: none; }
+    main {
+      max-width: 1100px;
+      margin: 24px auto 64px;
+      padding: 0 24px;
+    }
+    section {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+      margin-bottom: 24px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    code {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.9em;
+    }
+    pre {
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .note { font-size: 0.9rem; color: #475569; }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Back to Documentation</a></nav>
+  <main>
+    <h1>Basic Usage</h1>
+    <p>Minimal setup, core attributes, and essential behaviors.</p>
+
+    <section id="intro">
+      <h2>Default Component</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="name-attribute-demo">
+      <h2>name Attribute</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Team"></ck-primitive-array>
+        </div>
+        <div class="card">
+          <ck-primitive-array name="Contributors"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array name="Team"&gt;&lt;/ck-primitive-array&gt;</code></pre>
+      <p class="note">The name is used in the greeting and as the form field name when submitting.</p>
+    </section>
+
+    <section id="color-demo">
+      <h2>color Attribute</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Ocean" color="#0369a1"></ck-primitive-array>
+        </div>
+        <div class="card">
+          <ck-primitive-array name="Sunset" color="#ea580c"></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array name="Ocean" color="#0369a1"&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="items-attribute-demo">
+      <h2>items Attribute</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array
+            name="Priorities"
+            items='["Launch", "Ship", "Follow up"]'>
+          </ck-primitive-array>
+        </div>
+        <div class="card">
+          <ck-primitive-array
+            name="Metrics"
+            items='[12, 24, 36, true, false]'>
+          </ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array name="Priorities" items='["Launch", "Ship"]'&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="readonly-demo">
+      <h2>readonly Attribute</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Readonly" readonly items='["Alpha", "Beta"]'></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array readonly items='["Alpha"]'&gt;&lt;/ck-primitive-array&gt;</code></pre>
+      <p class="note">Readonly disables editing and action buttons, but values remain visible.</p>
+    </section>
+
+    <section id="disabled-demo">
+      <h2>disabled Attribute</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array name="Disabled" disabled items='["Locked"]'></ck-primitive-array>
+        </div>
+      </div>
+      <pre><code>&lt;ck-primitive-array disabled items='["Locked"]'&gt;&lt;/ck-primitive-array&gt;</code></pre>
+    </section>
+
+    <section id="add-item-demo">
+      <h2>Adding Items + change Event</h2>
+      <div class="grid">
+        <div class="card">
+          <ck-primitive-array id="basicAddDemo" name="Checklist"></ck-primitive-array>
+          <p id="basicAddLog" class="note">change event: 0 items</p>
+        </div>
+      </div>
+      <pre><code>const el = document.querySelector('#basicAddDemo');
+el.addEventListener('change', (event) =&gt; {
+  console.log(event.detail.items);
+});</code></pre>
+    </section>
+  </main>
+
+  <script type="module">
+    import '../../dist/ck-primitive-array/ck-primitive-array.esm.js';
+
+    const addDemo = document.getElementById('basicAddDemo');
+    const addLog = document.getElementById('basicAddLog');
+
+    if (addDemo && addLog) {
+      addDemo.addEventListener('change', (event) => {
+        const items = event.detail?.items || [];
+        addLog.textContent = `change event: ${items.length} items`;
+      });
+    }
+  </script>
+</body>
+</html>
